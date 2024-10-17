@@ -55,7 +55,19 @@
 
   - [Trailing lambdas](#trailing-lambdas)
 
-[Classes](#classes)
+[Classes](#classes):
+- [Properties](#properties)
+- [Create instance](#create-instance)
+- [Access properties](#access-properties)
+- [Member functions](#member-functions)
+- [Data classes](#data-classes)
+
+[Null safety](#null-safety):
+- [Nullable types](#nullable-types)
+- [Check for null values](#check-for-null-values)
+- [Use safe calls](#use-safe-calls)
+
+
 ## Variables and Data Types
 
 In Kotlin, variables are declared using two keywords:
@@ -847,15 +859,263 @@ println(listOf(1, 2, 3).fold(0) { x, item -> x + item })  // 6
 ```
 ## Classes
 
+To declare a class, use the `class` keyword:
+
+```kotlin
+class Customer
+```
+
+#### Properties
+
+Characteristics of a class's object can be declared in properties. You can declare properties for a class:
+
+- Within parentheses `()` after the class name.
+
+```kotlin
+class Contact(val id: Int, var email: String)
+```
+- Within the class body defined by curly braces `{}`.
+
+```kotlin
+class Contact(val id: Int, var email: String){
+    val category: String = ""
+}
+```
+We recommend that you declare properties as read-only (val) unless they need to be changed after an instance of the class is created.
+
+You can declare properties without val or var within parentheses but these properties are not accessible after an instance has been created.
+>✨
+>- The content contained within parentheses `()` is called the **class header**.
+>- You can use a trailing comma when declaring class properties.
+
+Just like with function parameters, class properties can have default values:
+
+```kotlin
+class Contact(val id: Int, var email: String = "example@gmail.com")
+```
+
+#### Create instance
+
+To create an object from a class, you can declare a class instance using a constructor.
+
+By default, Kotlin automatically creates a constructor with the parameters declared in the class header.
+
+For example:
+
+```kotlin
+class Contact(val id: Int, var email: String = "example@gmail.com")
+
+fun main() {
+    val contact= Contact(1, "mary@gmail.com")
+}
+```
+
+In the example: 
+
+- `Contact` is a class.
+- `contact` is an instance of the `Contact` class.
+- `id` and `email` are properties.
+- `id` and `email` are used with the default constructor to create `contact`.
+
+Kotlin classes can have many constructors, including ones that you define yourself.
+
+#### Access properties
+
+To access a property of an instance, write the name of the property after the instance name appended with a period `.`:
+
+```kotlin
+class Contact(val id: Int, var email: String)
+
+fun main() {
+    val contact = Contact(1,"mary@gmail.com")
+  
+    // Prints the value of the property: email
+    println(contact.email) // mary@gmail.com
+  
+  
+    // Updates the values of the property: email
+    contact.email = "jane@gmail.com"
+  
+    println(contact.email) // jane@gmail.com
+  
+}
+```
+
+>✨ To concatenate the value of a property as part of a string, you can use string templates (`$`). For example:
+>   ```kotlin
+>       println("Their email address is: ${contact.email}")    
+>   ```
+
+#### Member functions
+
+In addition to declaring properties as part of an object's characteristics, you can also define an object's behavior with member functions.
+
+In Kotlin, member functions must be declared within the class body. To call a member function on an instacne, write the function name after the instance name append with a period `.`. For example:
+
+```kotlin
+class Contact(val id: Int, var email: String) {
+    fun printId() {
+        println(id)
+    }
+}
+
+fun main() {
+    val contact = Contact(1, "mary@gmail.com")
+    
+    // Calls member function printId()
+    contact.printId() // 1
+}
+```
+
+#### Data classes
+
+Kotlin has data classes which are particularly useful for storing data. Data classes have the same functionality as classes, but they come automatically with additional member functions. These member functions allow you to easily print the instance to readable output, compare instances of as class, copy instances, and more. As these functions are automatically available, you don't have to spend time writing the same boilerplate code for each of your classes.
+
+To declare a data class, use the keyword `data`:
+
+```kotlin
+data class User (val name: String, val id: Int)
+```
+
+The most useful predefined member functions of data classes are: 
+
+| Function     | Description|
+|--------------|----------|
+| `toString()` | Prints a readble string of the class instance and its properties.|
+| `equals()` or `==`| Compares instances of a class|
+| `copy()`| Create a class instance by copying another, potentially with some different properties.|
+
+For example: 
+```kotlin
+val user = User("Alex", 1)
+val secondUser = User("Alex", 1)
+val thirdUser = User("Max", 2)
+
+// Compares user to second user
+println("user == secondUser: ${user == secondUser}") 
+// user == secondUser: true
+
+// Compares user to third user
+println("user == thirdUser: ${user == thirdUser}")   
+// user == thirdUser: false
+```
+
+## Null safety
+
+In Kotlin, it's possible to have a `null` value. Kotlin use `null` values when something is missing or not yet set. You've already seen an example of Kotlin returning a null value in the Collections chapter when you tried to access a key-value pair with a key that does not exist in the map. Although it's useful to use `null` values in this way, you might run into problems if your code isn't prepared to handle them.
+
+To help prevent issues with `null` values in your programs, Kotlin has null safety in place. Null safety detects potential problems with `null` values at compile time, rather than at run time.
+
+Null safety is combination of features that allow you to:
+
+- Explicitly declare when `null` values are allowed in your program.
+
+- Check for `null` values.
+
+- Use safe calls to properties or functions that may contain `null` values.
+
+- Declare actions to take if `null` values are detected.
+
+#### Nullable types
+
+Kotlin supports nullable types which allows the possibility for the declared type to have `null` values. By default, a type is **not** allowed to accept `null` values. Nullable types are declared by explicitly adding `?` after the type declaration.
+
+For example:
+
+```kotlin
+fun main() {
+    // neverNull has String type
+    var neverNull: String = "This can't be null"
+  
+    // Throws a compiler error
+    neverNull = null
+    
+    // nullable has nullable String yupe
+    var nullable: String? = "You can keep a null here" 
+  
+    // This is OK
+    nullable = null 
+  
+    // By default, null values aren't accepted
+    var inferredNonNull = "The compiler assumes non-nullable"
+  
+    // Throws a compiler error 
+    inferredNonNull = null 
+  
+    // notNull doesn't accept null values
+    fun strLength(notNull: String): Int {
+        return notNull.length;
+    }
+  
+    println(strLength(neverNull)) // 18
+    println(strLength(nullable)) // Throws a compiler error
+  
+}
+```
+
+#### Check for null values
+
+You can check for the presence of `null` values within conditional expressions. In the following example, the `describeString()` function has an `if` statement that check whether `maybeString` is **not** `null` and if its `length` is greater than zero:
+
+```kotlin
+fun describeString(maybeString: String?): String{
+    if (maybeString != null && maybeString.length > 0){
+        return "Length of string ${maybeString.length}"
+    }else {
+        return "Empty or null string"
+    }
+}
+
+fun main() {
+    val nullString: String? = null 
+    println(describeString(nullString)) // Empty or null string
+}
+```
+
+#### Use safe calls
+
+To safely access properties of an object that might contain a `null` value, use the safe call operator `?.`. The safe call operator returns `null` if either the object or one of its accessed properties is `null`. This is useful if you want to avoid the presence of `null` values triggering errors in your code. 
+
+In the following example, the `lengthString()` function uses a safe call to return either the length of the string or `null`:
+
+```kotlin
+fun lengthString(maybeString: String?): Int? = maybeString?.length
+
+fun main() {
+    val nullString: String? = null 
+    println(lengthString(nullString)) // null
+}
+```
+
+>✨ Safe calls can be chained so that if any property of an object contains a `null` value, then `null` is returned without an error being thrown. For example:
+>    ```kotlin
+> person.company?.address?.country
+>    ```
 
 
+To safe call operator can also be used to safely call an extension or member function. In this case, a null check is performed before the function is called. If the check detects a `null` value, then the call is skipped and `null` is returned.
 
+In the following example, `nullString` is `null` so the invocation of `.uppercase()` is skipped and `null` is returned:
 
+```kotlin
+fun main() {
+    val nullString: String? = null 
+    println(nullString?.uppercase()) // null
+}
+```
 
+#### Use Elvis operator
 
+You can provide a default value to return if a `null` value is detected by using the **Elvis operator** `?:`.
 
+Write on the left-hand side of the Elvis operator what should be checked for a `null` value. 
+Write on the right-hand side of the Elvis operator what should be returned if a `null` value is detected.
 
+In the following example, `nullString` is `null` so the safe call to access the `length` property returns a `null` value. As a result, the Elvis operator returns `0`.
 
-
-
-
+```kotlin
+fun main() {
+    val nullString: String? = null 
+    println(nullString?.length ?: 0) //0
+}
+```
