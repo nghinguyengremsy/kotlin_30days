@@ -54,11 +54,15 @@
   - [Trailing lambdas](#trailing-lambdas)
 
 [Classes](#classes):
+- [Constructors](#constructors)
+- [Secondary constructors](#secondary-constructors)
 - [Properties](#properties)
 - [Create instance](#create-instance)
 - [Access properties](#access-properties)
 - [Member functions](#member-functions)
 - [Data classes](#data-classes)
+- [Inheritance](#inheritance)
+- [Overriding methods](#overriding-methods)
 
 [Null safety](#null-safety):
 - [Nullable types](#nullable-types)
@@ -101,6 +105,15 @@
 - [Generic function that requires the generic type information](#generic-function-that-requires-the-generic-type-information)
 - [Swap two variables](#swap-two-variables)
 - [Mark code as incomplete (TODO)](#mark-code-as-incomplete-todo)
+
+[Package and imports](#packages-and-imports):
+- [Default imports](#default-imports-)
+- [Imports](#imports)
+- [Visibility of top-level declarations](#visibility-of-top-level-declarations)
+
+[Kotlin for Android](#kotlin-for-android)
+
+
 ## Variables and Data Types
 
 In Kotlin, variables are declared using two keywords:
@@ -892,11 +905,155 @@ println(listOf(1, 2, 3).fold(0) { x, item -> x + item })  // 6
 ```
 ## Classes
 
+Classes can contain:
+
+- Constructors and initializer blocks
+- Functions
+- Properties
+- Nested and inner classes
+- Object declarations
+
 To declare a class, use the `class` keyword:
 
 ```kotlin
 class Customer
 ```
+
+>✨ Kotlin does not have a `new` keyword.
+
+#### Constructors
+
+A class in Kotlin has a **primary constructor** and possibly one or more **secondary constructors**. The primary constructor is declared in the class header, and it goes after the class name and optional type parameters.
+
+```kotlin
+class Person constructor(firstName: String)
+```
+If the primary constructor does not have any annotations or visibility modifiers; the `constructor` keyword can be omitted:
+
+```kotlin
+class Person(firstName: String)
+```
+The primary constructor initializes a class instance and its properties in the class header. The class header can't contain any runnable code. If you want to run some code during object creation, use **initializer blocks** inside the class body. Initializer blocks are declared with `init` keyword followed by curly braces. Write any code that you want to run within the curly braces.
+
+During the initialization of an instance, the initializer blocks are executed in the same order as they appear in the class body, interleaved with the property initializers:
+
+```kotlin
+class InitOrDemo(name: String){
+    val firstProperty = "First property: $name".also(::println)
+    init {
+        println("First initializer block that prints $name")
+    }
+    val secondProperty = "Second property: ${name.length}".also(::println)
+  init {
+      println("Second initializer block that prints ${name.length}")
+  }
+  
+  // First property: hello
+  
+  // First initializer block that prints hello
+  
+  // Second property: 5
+  
+  // Second initializer block that prints 5
+}
+```
+Primary constructor parameters can be used in the initializer blocks. They can also be used in property initializers declared in the class body:
+
+```kotlin
+class Customer(name: String){
+    val customerKey = name.uppercase()
+}
+```
+
+Kotlin has a concise syntax for declaring properties and initializing them from the primary constructor:
+
+```kotlin
+class Person(val firstName: String, val lastName: String, var age: Int)
+```
+
+Such declarations can also include default values of the class properties:
+
+```kotlin
+class Person(val firstName:String, val lastName: String, var isEmployed: Boolean = true)
+```
+
+You can use a trailing comma when you declare class properties:
+
+```kotlin
+class Person(
+    val firstName: String,
+    val lasName: String,
+    var isEmployed: Boolean,
+) {}
+```
+
+Much like regular properties, properties declared in the primary constructor can be mutable (`var`) or read-only (`val`)
+
+If the constructor has annotations or visibility modifiers, the `constructor` keyword is required and the modifiers go before it
+
+```kotlin
+class Customer public @Inject constructor(name: String)
+```
+Learn more about [visibility modifiers]()
+
+#### Secondary constructors
+
+A class can also declare **secondary constructors**, which are prefixed with `constructor`:
+
+```kotlin
+class Person(val pets: MutableList<Pet> = mutableListOf())
+
+class Pet {
+    constructor(owner: Person){
+        owner.pets.add(this) // adds this pet to the list of its owner's pets
+    }
+}
+```
+
+If the class has a primary constructor, each secondary constructor needs to delegate to the primary constructor, either directly or indirectly through another secondary constructor(s). Delegation to another constructor of the same class is done using the `this` keyword:
+
+```kotlin
+class Person(val name: String) {
+    val children: MutableList<Person> = mutableListOf()
+    constructor(name: String, parent: Person): this(name) {
+        parent.children.add(this)
+    }
+}
+```
+
+Code in initializer blocks effectively becomes part of the primary constructor. Delegation to the primary constructor happens at the moment of access to the first statement of a secondary constructor, so the code in all initializer blocks and property initializers is executed before the body of the secondary constructor.
+
+Even if the class has no primary constructor, the delegation still happens implicitly, and the initializer blocks are still executed:
+
+```kotlin
+class Constructors {
+    init {
+        println("Init block")
+    }
+  
+    constructor(i: Int) {
+        println("Constructor $i")
+    }
+}
+
+// Init block
+// Constructor 1
+
+``` 
+
+If a non-abstract class does not declare any constructors (primary or secondary), it will have a generated primary constructor with no arguments. The visibility of the constructor will be publc.
+
+If you don't want your class to have a public constructor, declare an empty primary constructor with non-default visibility:
+
+```kotlin
+class DontCreateMe private constructor() {}
+```
+
+>✨ On the JVM, if all of the primary constructor parameters have default values, the compiler will generate an additional parameterless constructor will use the default values. This makes it easier to use Kotlin with libraries such as Jackson or JPA that create class instances through parameterless constructors.
+>   ```kotlin
+>   class Customer(val customerName: String = "")
+>   ```
+
 
 #### Properties
 
@@ -1032,6 +1189,44 @@ println("user == secondUser: ${user == secondUser}")
 println("user == thirdUser: ${user == thirdUser}")   
 // user == thirdUser: false
 ```
+
+#### Inheritance
+
+All classes in Kotlin have a common superclass, `Any`, which is default superclass for a class with no supertypes declared:
+
+```kotlin
+class Example // Implicitly inherits from Any
+```
+
+`Any` has three methods: `equals()`, `hashCode()`, and `toString()`. Thus, these methods are defined for all Kotlin classes.
+
+By default, Kotlin classes are final - they can't be inherited. To make a class inheritable, mark it with the `open` keyword:
+
+```kotlin
+open class Base // Class is open for inheritance
+```
+
+To declare an explicit supertype, place the type after a colon in the class header:
+
+```kotlin
+open class Base(p: Int)
+
+class Derived(p: Int): Base(p)
+```
+
+#### Overriding methods
+
+If the derived class has a primary constructor, the base class can ( and must) be initialized in that primary constructor according to its parameters.
+
+If the derived class has no primary constructor, then each secondary constructor has to initialize the base type using the `super` keyword or it has to delegate to another constructor which does. Please note that in this case different secondary constructors can call different constructors of the base type:
+
+```kotlin
+class MyView: View {
+    constructor(ctx: Context) : super(ctx)
+    constructor(ctx: Context, attrs: AttributeSet) : super(ctx,attrs) 
+}
+```
+
 
 ## Null safety
 
@@ -1531,3 +1726,90 @@ fun calcTaxes(): BigDecimal = TODO("Waiting for feedback from accounting")
 ```
 
 IntelliJ IDEA's kotlin plugin understands the semantics of TODO() and automatically adds a code pointer in the TODO tool window.
+
+## Packages and imports
+
+A source file may start with a package declaration.
+
+```kotlin
+package org.example
+
+fun printMessage(){
+    
+}
+
+class Message{}
+```
+
+All the contents, such as classes and functions, of the source file are included in this package. So, in the example above, the full name of `printMessage()` is `org.example.printMessage`, and the full name of `Message` is `org.example.Message`.
+
+If the package is not specified, the contents of such a file belong to the `default` package with no name.
+
+#### Default imports 
+
+A number of packages are imported into every Kotlin file by default:
+
+- kotlin.*
+- kotlin.annotation.*
+- kotlin.collections.*
+- kotlin.comparisons.*
+- kotlin.io.*
+- kotlin.ranges.*
+- kotlin.sequences.*
+- kotlin.text.*
+
+Additional packages are imported depending on the target platform:
+
+- JVM:
+  - java.lang.*
+  - kotlin.jvm.*
+- JS:
+  - kotlin.js.*
+
+#### Imports
+
+Apart from the default imports, each file may contain its own `import` directives.
+
+You can import either a single name:
+
+```kotlin
+import org.example.Message // Message is now accessible without qualification.
+```
+or all the accessible contents of a scope: package, class, object, and so on:
+
+```kotlin
+import org.example.* // everything in `org.example` becomes accessible
+```
+
+If there's a name clash, you can disambiguate by using `as` keyword to locally rename the clashing entity:
+
+```kotlin
+import org.example.Message // Message is accessible
+import org.test.Message as TestMessage // TestMessage stands for `org.test.Message`
+```
+
+The `import` keyword is not restricted to importing classes, you can also use it to import other declarations:
+
+- top-level functions and properties
+- functions and properties declared in [object declarations]()
+- [enum constants]()
+
+#### Visibility of top-level declarations
+
+If a top-level declaration is marked `private`, it's private to the file it's declared in, see [Visibility modifiers]() 
+
+
+
+
+## Kotlin for Android
+
+You can benefit from:
+
+- **Less code combined with greater readability:** Spend less time writing your code and working to understand the code of others.
+- **Fewer common errors:** Apps built with Kotlin are 20% less likely to crash by on Google's internal data.
+- **Kotlin support in Jetpack libraries:** Jetpack Compose is Android's recommended modern toolkit for building native UI in Kotlin. KTX extension and Kotlin language features, like coroutines, extension functions, lambdas, and named parameters to existing Android libraries.
+- **Support for multiplatform development:** Kotlin Multiplatform, JetBrain's declarative UI framework based on Kotlin and Jetpack Compose, makes it possible to share UIs across platforms - iOS, Android, desktop, and web.
+- **Mature language and environment:** Since ít creation in 2011, Kotlin has developed continuously, not only as a language but as a whole ecosystem with robust tooling. Now it's seamlessly integrated into Android Studio and is actively used by many companies for developing Android application.
+- **Interoperability wih Java:** You can use Kotlin along with the Java programming language in your applications without needing to migrate all your code to Kotlin.
+- **Easy leaning:** Kotlin is very easy to learn, especially for Java developers.
+- **Big community:** Kotlin has great support and many contributions from the community, which is growing all over the world. Over 95% of top thousand Android apps use Kotlin.
