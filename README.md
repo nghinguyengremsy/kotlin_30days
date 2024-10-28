@@ -56,11 +56,15 @@
 [Classes](#classes):
 - [Constructors](#constructors)
 - [Secondary constructors](#secondary-constructors)
-- [Properties](#properties)
 - [Create instance](#create-instance)
+- [Properties](#properties):
+  - [Getters and setters](#getters-and-setters)
+  - [Compile-time constants](#compile-time-constants)
+  - [Late-initialized properties and variables](#late-initialized-properties-and-variables)
 - [Access properties](#access-properties)
 - [Member functions](#member-functions)
 - [Data classes](#data-classes)
+- [Interface](#interfaces)
 - [Inheritance](#inheritance)
 - [Overriding methods](#overriding-methods)
 - [Overriding properties](#overriding-properties)
@@ -777,7 +781,7 @@ Lambda expressions can be used in a number of ways. You can:
 - Return a lambda expression from a function
 - Invoke a lambda expression on its own
 
-##### **Pass to another function**
+###### **Pass to another function**
 
 A great example of when it's useful to pass a lambda expression to a function, is using the `.filter()` function on collections:
 
@@ -831,7 +835,7 @@ The `.map()` function accepts a lambda expression as a transform function:
 
 - `{ x -> x * 3 }` takes each element of the list and returns that element multiplied by 3.
 
-##### **Function types**
+###### **Function types**
 
 Before you can return a lambda expression from a function, you first need to understand **function types**.
 
@@ -861,7 +865,7 @@ if your lambda expression has no parameter then the parentheses `()` are left em
 >   val upperCaseString = { str -> str.uppercase() }
 >   ```
 
-##### **Return from a function**
+###### **Return from a function**
 
 Lambda expressions can be returned from a function. So that the compiler understands what type the lambda expression returned is, you must declare a function type.
 
@@ -885,7 +889,7 @@ fun main() {
 }
 ```
 
-##### **Invoke separately**
+###### **Invoke separately**
 
 Lambda expressions can be invoked on their own by adding parentheses `()` after curly braces `{}` and including any parameters within the parentheses:
 
@@ -893,7 +897,7 @@ Lambda expressions can be invoked on their own by adding parentheses `()` after 
 println({text:String -> text.uppercase()}("hello")) // Hello
 ```
 
-##### **Trailing lambdas**
+###### **Trailing lambdas**
 
 As you have already seen, if a lambda expression is the only function parameter, you can drop the function parentheses `()`. If a lambda expression is passed as the last parameter of a function, then the expression can be written outside the function parentheses `()`. In both cases, this syntax is called a **trailing lambda**.
 
@@ -1058,6 +1062,31 @@ class DontCreateMe private constructor() {}
 >   class Customer(val customerName: String = "")
 >   ```
 
+#### Create instance
+
+To create an object from a class, you can declare a class instance using a constructor.
+
+By default, Kotlin automatically creates a constructor with the parameters declared in the class header.
+
+For example:
+
+```kotlin
+class Contact(val id: Int, var email: String = "example@gmail.com")
+
+fun main() {
+    val contact= Contact(1, "mary@gmail.com")
+}
+```
+
+In the example:
+
+- `Contact` is a class.
+- `contact` is an instance of the `Contact` class.
+- `id` and `email` are properties.
+- `id` and `email` are used with the default constructor to create `contact`.
+
+Kotlin classes can have many constructors, including ones that you define yourself.
+
 
 #### Properties
 
@@ -1088,30 +1117,168 @@ Just like with function parameters, class properties can have default values:
 class Contact(val id: Int, var email: String = "example@gmail.com")
 ```
 
-#### Create instance
+###### **Getters and setters**
 
-To create an object from a class, you can declare a class instance using a constructor.
+The full syntax for declaring a property is as follows: 
+```kotlin
+var <propertyName>[: <PropertyType>] [= <property_initializer>]
+    [<getter>]
+    [<setter>]
+```
 
-By default, Kotlin automatically creates a constructor with the parameters declared in the class header.
+The initializer, getter and setter are optional. The property type is optional if it can be inferred from the initializer or the getter's return type, as shown below:
+```kotlin
+var initialized = 1 // has type Int, default getter and setter
 
-For example:
+// var allByDefault // ERROR: explicit initializer required, default getter and setter implied
+```
+The full syntax of a read-only property declaration differs from a mutable one in two ways: it starts with `val` instead of `var` and does not allow a setter
 
 ```kotlin
-class Contact(val id: Int, var email: String = "example@gmail.com")
+val simple: Int? // has type Int, default getter, must be initialized in constructor
+val inferredType = 1 // has type Int and a default getter
+```
 
-fun main() {
-    val contact= Contact(1, "mary@gmail.com")
+You can define custom accessors for a property. If you define a custom getter, it will be called every time you access the property (this way you can implement a computed property). Here's an example of a customer getter:
+
+```kotlin
+class Rectangle(val width: Int, val height: Int) {
+  val area: Int get() = this.width * this.height // property type is optional since it can be inferred from the getter's return type.
+}
+
+/// Width=3, Height=4, area=12
+```
+
+You can omit the property type if it can be inferred from the getter:
+
+```kotlin
+val area get() = this.width * this.height
+```
+
+If you define a custom setter, it will be called every time you assign a value to the property, except its initialization. A custom setter looks like this:
+
+```kotlin
+var stringRepresentation: String 
+  get() = this.toString()
+  set(value) {
+      setDataFromString(value) // Parses the string and assigns values to other properties
+  }
+```
+
+By convention, the name of the setter parameter is `value`, but you can choose a different name if you prefer.
+
+If you need to annotate an accessor or change its visibility, but you do not want to change the default implementation, you can define the accessor without defining its body:
+
+```kotlin
+var setterVisibility: String= "abc"
+    private set // the setter is private and has the default implementation
+
+
+var setterWithAnnotation: Any? = null 
+    @Inject set // annotate the setter with Inject
+```
+
+ _Backing fields_
+
+In Kotlin, a field is only used as a property to hold its value in memory. Fields cannot be declared directly. However, when a property needs a backing field, Kotlin provides it automatically. This backing field can be referenced in the accessors using the `field` identifier:
+
+```kotlin
+var counter = 0 // the initializer assigns the backing field directly
+  set(value) {
+      if(value >= 0){
+          field = value
+        // counter = value // ERROR StackOverflow: Using actual name 'counter' would make setter recursive
+      }
+  }
+```
+
+The `field` identifier can only be used in the accessors of the property.
+
+A backing field will be generated for a property if it uses the default implementation of at least one of the accessors, or if a custom accessor references it through the `field` identifier.
+
+For example, there would be no backing field in the following case:
+
+```kotlin
+val isEmpty: Boolean
+  get() = this.size == 0
+```
+
+_Backing properties_
+
+If you want to do something that does not fit into this **implicit backing field** scheme, you can always fall back to having a **backing property**:
+
+```kotlin
+private var _table: Map<String,Int>? = null
+public val table: Map<String,Int>
+  get() {
+      if(_table == null) {
+          _table = HashMap() // Type parameters are inferred
+      }
+      return _table ?: throw AssertionError("Set to null by another thread")
+  }
+```
+>✨ On the JVM: Access to private properties with default getters and setters if optimized to avoid function call overhead.
+###### **Compile-time constants**
+
+If the value of a read-only property is known at compile time, mark it as a **compile time constant** using the `const` modifier. Such a property needs to fulfill the following requirements:
+
+- It must be a top-level property, or a member of an `object` declaration or a **companion object**.
+- It must be initialized with a value of type `String` or a primitive type.
+- It cannot be a custom getter.
+
+The compiler will inline usages of the constant, replacing the reference to the constant with its actual value. However, the field will not be removed and therefore can be interacted with using `reflection`.
+
+Such properties can also be used in annotations: 
+
+```kotlin
+const val SUBSYSTEM_DEPRECATED: String = "This subsystem is deprecated"
+@Deprecated(SUBSYSTEM_DEPRECATED) fun foo(){}
+```
+###### **Late-initialized properties and variables**
+
+Normally, properties declared as having a non-nullable type must be initialized in the constructor. However, it's often the case that doing so is not convenient. For example, properties can be initialized through dependency injection, or in the setup method of a unit test. In these cases, you cannot supply a non-nullable initializer in the constructor, but you still want to avoid null checks when referencing the property inside the body of a class.
+
+To handle suc cases, you can mark the property with the `lateinit` modifier:
+
+```kotlin
+public class MyTest {
+    lateinit var  subject: TestSubject
+    
+    @SetUp fun setup() {
+        subject = TestSubject()
+    }
+    @Test fun test() {
+        subject.method() // dereference directly
+    }
 }
 ```
 
-In the example: 
+This modifier can be used on `var` properties declared inside the body of a class (not in the primary constructor, and only when the property does not have a custom getter or setter), as well as for top-level properties and local variables. The type of the property or variable must be non-nullable, and it must not be a primitive type.
 
-- `Contact` is a class.
-- `contact` is an instance of the `Contact` class.
-- `id` and `email` are properties.
-- `id` and `email` are used with the default constructor to create `contact`.
+Accessing a `lateinit` property before it has been initialized throws a special exception that clearly identifies the property being accessed and the fact that it hasn't been initialized.
 
-Kotlin classes can have many constructors, including ones that you define yourself.
+_Checking whether a `lateinit var` is initialized_
+
+To check whether a `lateinit var` has already been initialized, use `.isInitialized` on the reference to that property:
+
+```kotlin
+if(foo::bar.isInitialized){
+    println(foo.bar)
+}
+```
+
+This check is only available for properties that are lexically accessible when declared in the same type, in one of the outer types, or at top level in the same file.
+
+###### **Overriding properties**
+
+See [Overriding properties](#overriding-properties-1)
+
+###### **Delegated properties**
+
+The most common kind of property simply reads from (and maybe writes to) a backing field, but custom getters and setters allow you to use properties so one can implement any sort of behavior of a property. Somewhere in between the simplicity ò the first kind and variety of the second, there are common patterns for what properties can do. A few examples: lazy values, reading from a map by a given key, accessing a database, notifying a listener on access.
+
+Such common behaviors can be implemented as libraries using delegated properties.
+
 
 #### Access properties
 
@@ -1193,6 +1360,8 @@ println("user == secondUser: ${user == secondUser}")
 println("user == thirdUser: ${user == thirdUser}")   
 // user == thirdUser: false
 ```
+
+#### Interfaces
 
 #### Inheritance
 
