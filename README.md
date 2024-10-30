@@ -1,5 +1,5 @@
 # 30 days of Kotlin
-
+[Documents](https://kotlinlang.org/docs/home.html)
 ## Setup
 [Setup Intellij for Kotlin development](https://www.jetbrains.com/help/idea/get-started-with-kotlin.html)
 
@@ -75,7 +75,18 @@
 - [Derived class initialization order](#derived-class-initialization-order)
 - [Calling the superclass implementation](#calling-the-superclass-implementation)
 - [Overriding rules](#overriding-rules)
+- [Functional (SAM) interfaces](#functional-sam-interfaces):
+  - [SAM conversions](#sam-conversions)
+  - [Migration from an interface with constructor function to a functional interface](#migration-from-an-interface-with-constructor-function-to-a-functional-interface)
+  - [Functional interfaces vs. type aliases](#functional-interfaces-vs-type-aliases)
 
+[Visibility modifiers](#visibility-modifiers):
+  - [Packages](#packages)
+  - [Class members](#class-member):
+    - [Constructor](#constructors-1)
+    - [Local declarations](#local-declarations)
+  - [Modules](#modules)
+  
 [Null safety](#null-safety):
 - [Nullable types](#nullable-types)
 - [Check for null values](#check-for-null-values)
@@ -1681,6 +1692,228 @@ class Square : Rectangle(), Polygon {
 
 ```
 It's fine to inherit from both `Rectangle` and `Polygon`, but both of them have their implementations of `draw()`, so you need to override `draw()` in `Square` and provide a separate implementation  for it to eliminate the ambiguity.
+
+#### Functional (SAM) interfaces
+
+An interface with only one abstract member function is called a **functional interface**, or a **Single Abstract Method (SAM) interface**. The functional interface can have several non-abstract member functions but only one abstract member function.
+
+To declare a functional interface in Kotlin, use the `fun` modifier.
+
+```kotlin
+fun interface KRunnable {
+    fun invoke()
+}
+```
+
+###### **SAM conversions**
+
+For functional interfaces, you can use SAM conversions that help make your code more concise and readable by using lambda expressions.
+
+Instead of creating a class that implements a functional interface manually, you can use a lambda expression. With a SAM conversion, Kotlin can convert any lambda expression whose signature matches the signature of interface's single method into the code, which dynamically instantiates the interface implemention.
+
+For example, consider the following Kotlin functional interface:
+
+```kotlin
+fun interface IntPredicate{
+    fun accept(i: Int): Boolen
+}
+```
+
+If you don't use a SAM conversions, you will need to write code like this:
+
+```kotlin
+fun interface IntPredicate{
+  fun accept(i: Int): Boolen
+}
+// Creating an instance of a class
+val isEven = object : IntPredicate {
+    override fun accept(i: Int): Boolean {
+        return i % 2 == 0
+    }
+}
+```
+By leveraging Kotlin's SAM conversion, you can write the following equivalent code instead:
+
+```kotlin
+fun interface IntPredicate{
+  fun accept(i: Int): Boolen
+}
+
+// Creating an instance of a class
+val isEven = IntPredicate { it % 2 == 0}
+
+fun main() {
+    println("Is 7 even? - ${isEven.accept(7)}")
+}
+
+/// Is 7 even? - false
+```
+
+###### **Migration from an interface with constructor function to a functional interface**
+
+Starting from 1.6.20, Kotlin supports callable references to functional interface constructors, which adds a source-compatible way to migrate from an interface with a constructor function to a functional interface. Consider the following code:
+
+```kotlin
+interface Printer {
+    fun print()
+}
+
+fun Printer(block: () -> Unit): Printer = object : Printer { 
+    override fun print() = block() 
+}
+
+```
+With callable references to functional interface constructors enabled, this code can be replaced with just a functional interface declaration:
+
+```kotlin
+fun interface Printer {
+    fun print()
+}
+```
+Its constructor will be created implicitly, and any code using the `::Printer` function reference will compile. For example:
+
+```kotlin
+documentsStorage.addPrinter(::Printer)
+```
+
+Preserve the binary compatibility by marking the legacy function `Printer` with the `@Deprecated` annotation with `DeprecationLevel.HIDDEN`:
+
+```kotlin
+@Deprecated(message = "Your message about the deprecation", level = DeprecationLevel.HIDDEN)
+fun Printer (...) {...}
+```
+###### **Functional interfaces vs. type aliases**
+
+You can also simply rewrite the above using a type alias for a functional type:
+
+```kotlin
+typealias IntPredicate = (i: Int) -> Boolean
+
+val isEven: IntPredicate = {it % 2 == 0}
+
+fun main() {
+    println("Is 7 even? - ${isEven.invoke(7)}")
+}
+```
+However, functional interfaces and type aliases serve different purposes. Type aliases are just names for existing types - they don't create a new type, while functional interfaces do. You can provide extensions that are specific to a particular functional interface to be inapplicable for plain functions or their type aliases.
+
+Type aliases can have only one member, while functional interfaces can have multiple non-abstract member functions and one abstract member function. Functional interfaces can also implement and extend other interfaces.
+
+Functional interfaces are more flexible and provide more capabilities than type aliases, but they can be more costly both syntactically and at runtime because they can require conversions to a specific interface. When you choose which one to use in your code, consider your needs:
+
+- If your API needs to accept a function(any function) with some specific parameters and return types - use a simple functional type or define a type alias to give a shorter name to the corresponding functional type. 
+- If your API accepts a more complex entity than a function - for example, it has non-trivial contracts and/or operations on it that cannot be expressed in a functional type's signature - declare a separate functional interface for it. 
+
+## Visibility modifiers
+
+Classes, objects, interfaces, constructors, and functions, as well as properties and their setters, can have **visibility modifiers**. Getters always have the same visibility as their properties.
+
+There are four visibility modifiers in Kotlin: `private`, `protected`, `internal`, and `public`.
+The default visibility is `public`.
+
+We will learn how the modifiers apply to different types of declaring scopes.
+
+#### Packages
+
+Functions, properties, classes, objects, and interfaces can be declared at the "top-level" directly inside a package:
+
+```kotlin
+// file name: example.kt
+package foo
+
+fun baz() {}
+class Bar
+```
+- If you don't use a visibility modifier, `public` is used by default, which means that your declarations will be visible everywhere.
+- If you mark a declaration as `private`, it will only be visible inside the file that contains the declaration.
+- If you mark it as `internal`, it will be visible everywhere in the same module.
+- The `protected` modifier is not available for top-level declarations.
+
+>✨ To use a visible top-level declaration from another package, you should import it.
+
+Examples:
+
+```kotlin
+// file name: example.kt
+package foo
+
+private fun foo() {} // visible inside example.kt
+
+public var bar: Int = 5 // property is visible everywhere
+    private set         // setter is visible only in example.kt
+
+internal val baz: Int = 6 // Visible inside the same module.
+```
+
+#### Class member
+
+For members declared inside a class:
+
+- `private` means that the members is visible inside this class only(including all its members).
+- `protected` means that the member has the same visibility as one marked as `private`, but that is also visible in subclasses.
+- `internal` means that any client inside this module who sees the declaring class sees its `internal` members.
+- `public` means that any client who sees the declaring class sees its `public` members.
+
+>✨ In Kotlin, an outer class does not see private members of its inner classes.
+
+If you override a `protected` or an `internal` member and do not specify the visibility explicitly, the overriding member will also have the same visibility as the original.
+
+Examples:
+
+```kotlin
+open class Outer {
+    private val a = 1
+    protected open val b = 2
+    internal open val c = 3
+    val d = 4 // public by default
+  
+    protected class Nested { 
+        public val e: Int = 5
+    }
+}
+
+class Subclass: Outer() {
+    // `a` is not visible
+    // `b`, `c` and `d` are visible
+    // `Nested` and `e` are visible
+    override  val b = 5 // `b` is protected
+    override val c = 7 // `c` is internal
+}
+
+class Unrelated (o: Outer) {
+    // o.a, o.b are not visible
+    // o.c, o.d are visible (same module)
+    // Outer.Nested is not visible, and Nested::e is not visible either
+}
+```
+
+###### **Constructors**
+
+Use the following syntax to specify the visibility of the primary constructor of a class:
+
+>✨ You need to and an explicit `constructor` keyword.
+
+```kotlin
+class C private constructor(a: Int)
+```
+Here the constructor is `private`. By default, all constructors are `public`, which effectively amounts to them being visible everywhere the class is visible(This means that a constructor of an `internal` class is only visible within the same module).
+
+For sealed classes, constructors are `protected` by default.
+
+###### **Local declarations**
+
+Local variables, functions, and classes cannot have visibility modifiers.
+
+#### Modules
+
+The `internal` visibility modifier means that the member is visible within the same module. More specifically, a module is a set of Kotlin files compiled together, for example:
+
+- An IntelliJ IDEA module.
+- A Maven project.
+- A Gradle source set (with the exception that the `test` source set can access the internal declarations of `main`).
+- A set of files compiled with one invocation of the `<kotlinc>` Ant task.
+
+
 
 ## Null safety
 
