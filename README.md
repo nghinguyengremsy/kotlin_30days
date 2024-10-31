@@ -92,6 +92,16 @@
 - [Check for null values](#check-for-null-values)
 - [Use safe calls](#use-safe-calls)
 
+[Extensions](#extensions):
+- [Extension functions](#extension-functions-)
+- [Extensions are resolved statically](#extensions-are-resolved-statically)
+- [Nullable receiver](#nullable-receiver)
+- [Extension properties](#extension-properties)
+- [Companion object extensions](#companion-object-extensions)
+- [Scope of extensions](#scope-of-extensions)
+- [Declaring extensions as members](#declaring-extensions-as-members)
+
+
 [Idioms](#idioms):
 
 - [Create DTOs (POJOs/POCOs)](#create-dtos-pojospocos)
@@ -1915,6 +1925,7 @@ The `internal` visibility modifier means that the member is visible within the s
 
 
 
+
 ## Null safety
 
 In Kotlin, it's possible to have a `null` value. Kotlin use `null` values when something is missing or not yet set. You've already seen an example of Kotlin returning a null value in the Collections chapter when you tried to access a key-value pair with a key that does not exist in the map. Although it's useful to use `null` values in this way, you might run into problems if your code isn't prepared to handle them.
@@ -1945,7 +1956,7 @@ fun main() {
     // Throws a compiler error
     neverNull = null
     
-    // nullable has nullable String yupe
+    // nullable has nullable String type
     var nullable: String? = "You can keep a null here" 
   
     // This is OK
@@ -2034,6 +2045,266 @@ fun main() {
     println(nullString?.length ?: 0) //0
 }
 ```
+
+
+## Extensions
+
+Kotlin provides the ability to extend a class or an interface with new functionality without have to inherit from the class or use design patterns such as **Decorator**. This is done via a special declarations called **extensions**.
+
+For example, you can write new functions for a class or an interface from a third-party library that you can't modify. Such functions can be called in usual way, as if they were methods of the original class. This mechanism is called an **extension function**. There are also **extension properties** that let you define new properties for existing classes.
+
+#### Extension functions
+
+To declare an extension function, prefix its name with a **receiver type**, which refers to the type being extended. The following adds a `swap` function to `MutableList<Int>`:
+
+```kotlin
+fun MutableList<Int>.swap(index1: Int, index2: Int) {
+    val tmp = this[index1]  // `this` corresponds to the list
+    this[index1] = this[index2]
+    this[index2]= tmp
+}
+```
+The `this` keyword inside an extension function corresponds to the receiver object(the one that is passed before the dot). Now, you can call such a function on any `MutableList<Int>`:
+
+```kotlin
+val list = mutableListOf(1,2,3)
+list.swap(0,2) 
+```
+
+This function makes sense for any MutableList<T>, and you can make it generic:
+
+```kotlin
+fun <T> MutableList<T>.swap(index1: Int, index2: Int) {
+    val tmp = this[index1]  // `this` corresponds to the list
+    this[index1] = this[index2]
+    this[index2]= tmp
+}
+```
+You need to declare the generic type parameter before the function name to make it available in the receiver type expression. For more information about generics, see [generic functions]()
+
+#### Extensions are resolved statically
+
+Extensions do not actually modify the classes they extend. By defining an extension, you are not inserting new members into a class, only making new functions callable with the dot-notation on variables of the this type.
+
+Extension functions are dispatched **statically**. So which extension function is called is already known at compile time based on the receiver type. For example:
+
+```kotlin
+open class Shape
+class Rectangle(): Shape()
+
+fun Shape.getName() = "Shape"
+fun Rectangle.getName() = "Rectangle"
+
+fun printClassName(s: Shape) {
+    println(s.getName())
+}
+
+printClassName(Rectangle())
+
+/// Shape
+```
+This example prints **Shape**, because the extension function called depends only on the declared type of the parameter `s`, which is the `Shape` class.
+
+If a class has a member function, and an extension function is defined which has the same receiver type, the same name, and is applicable to give arguments, the **member always wins**. For example:
+
+```kotlin
+class Example {
+    fun printFunctionType() {
+        println("Class method")
+    }
+}
+
+fun Example.printFunctionType() {
+    println("Extension function")
+}
+
+Example().printFunctionType()
+
+/// Class method
+```
+However, it's perfectly OK for extension functions to overload member functions that have same name but a different signature:
+
+```kotlin
+class Example {
+    fun printFunctionType() {
+        println("Class method")
+    }
+}
+
+fun Example.printFunctionType(i: Int){
+    println("Extension function: #$i")
+}
+
+Example().printFunctionType(1)
+
+/// Extension function: #1
+```
+
+#### Nullable receiver
+
+Note that extensions can be defined with a nullable receiver type. These extensions can be called on an object variable even if its value is null. If the receiver type is `null`, then `this` is also `null`. So when defining an extension with a nullable receiver type, we recommend performing a `this == null` check inside the function body to avoid compiler errors.
+
+You can call `toString()` in Kotlin without checking for `null`, as the check already happens inside the extension function:
+
+```kotlin
+fun Any?.toString(): String {
+    if (this == null) return "null"
+  // After the null check, `this` is autocast to a non-nullable type, so the toString below resolves to the member function of the Any class
+  return toString()
+}
+```
+
+#### Extension properties
+
+Kotlin supports extension properties much like it supports functions:
+
+```kotlin
+val <T> List<T>.lastIndex: Int 
+  get() = size -1
+```
+
+>✨ Since extensions do not actually insert members into classes, there's no efficient way for an extension property to have a backing field. This is why initializers are not allowed for extension properties. Their behavior can only be defined by explicitly providing getters/setters.
+
+Example:
+
+```kotlin
+val House.number = 1 // Error: Initializers are not allowed for extension properties.
+```
+
+#### Companion object extensions
+
+If a class has a companion object defined, you can also define extension functions and properties for the companion object. Just like regular members of the companion object, they can be called using only the class name as the qualifier:
+
+```kotlin
+class MyClass {
+    companion object {} // will be called "Companion"
+}
+
+fun MyClass.Companion.printCompanion() {
+    println("companion")
+}
+
+fun main() {
+    MyClass.printCompanion()
+}
+
+/// companion
+```
+
+#### Scope of extensions
+
+In most cases, you define extensions on the top level, directly under packages:
+
+```kotlin
+package org.example.declarations
+
+fun List<String>.getLongestString() {}
+```
+
+To use an extension outside its declaring package, import it at the call site:
+
+```kotlin
+package org.example.usage
+
+import org.example.declarations.getLongestString
+
+fun main() {
+    val list = listOf("Red", "Green", "Blue")
+    list.getLongestString()
+}
+```
+
+See [imports]() for more information.
+
+#### Declaring extensions as members
+
+You can declare extension for one class inside another class. Inside such an extension, there are multiple implicit receivers - objects whose members can be accessed without a qualifier. An instance of a class in which the extension is declared is called a **dispatch receiver**, and an instance of the receiver type of the extension method is called an **extension receiver**.
+
+```kotlin
+class Host(val hostname: String) {
+    fun printHostName() {
+        print(hostname)
+    }
+}
+
+class Connection(val host: Host, val port: Int) {
+    fun printPort() {
+        print(port)
+    }
+  
+    fun Host.printConnectionString() {
+        printHostName() // calls Host.printHostName()
+        print(":")
+        printPort() // calls Connection.printPort()
+    }
+  
+    fun connect() {
+        /*...*/
+        host.printConnectionString() // calls the extension function
+    }
+}
+
+fun main() {
+    Connection(Host("kotlin"),443).connect()
+    // Host("kotlin").printConnectionString() // error, the extension function is unavailable outside Connection
+}
+
+/// kotlin:443
+```
+In the event of a name conflict the members of a dispatch receiver and an extension receiver, the extension receiver takes precedence. To prefer to the member of the dispatch receiver, you can use the qualified `this` syntax.
+
+```kotlin
+class Connection {
+    fun Host.getConnectString() {
+        toString() // calls Host.toString()
+        this@Connection.toString() // calls Connection.toString()
+    }
+}
+```
+Extension declared as members can be declared as `open` and overridden in subclasses. This means that the dispatch of such functions is virtual with regard to the dispatch receiver type, but static with regard to the extension receiver type.
+
+```kotlin
+open class Base
+
+class Derived : Base() {}
+
+open class BaseCaller {
+    open fun Base.printFunctionInfo() {
+        println("Base extension function in BaseCaller")
+    }
+  
+    open fun Derived.printFunctionInfo() {
+        println("Derived extension function in BaseCaller")
+    }
+  
+    fun call(b: Base) {
+        b.printFunctionInfo()
+    }
+}
+
+class DerivedCaller: BaseCaller() {
+    override fun Base.printFunctionInfo() {
+        println("Base extension function in DerivedCaller")
+     }
+
+    override fun Derived.printFunctionInfo() {
+        println("Derived extension function in DerivedCaller")
+     }
+}
+
+fun main() {
+    BaseCaller().call(Base()) // Base extension function in BaseCaller
+    DerivedCaller().call(Base()) // Base extension function in DerivedCaller - dispatch receiver is resolved virtually
+    DerivedCaller().call(Derived()) // Base extension function in DerivedCaller - extension receiver is resolved statically
+}
+```
+
+#### Note on visibility
+
+Extensions utilize the same visibility modifiers as regular functions declared in same scope would. For example:
+
+- An extension declared at the top level of a file has access to the other `private` top-level declarations in the same file.
+- If an extension is declared outside its receiver type, it cannot access the receiver's `private` or `protected` members.
 
 ## Idioms
 
