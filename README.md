@@ -63,13 +63,23 @@
   - [Late-initialized properties and variables](#late-initialized-properties-and-variables)
 - [Access properties](#access-properties)
 - [Member functions](#member-functions)
-- [Data classes](#data-classes)
+- [Data classes](#data-classes):
+  - [Properties declared in the class body](#properties-declared-in-the-class-body)
+  - [Copying](#copying)
+  - [Data classes and destructuring declarations](#data-classes-and-destructuring-declarations)
+  - [Standard data classes](#standard-data-classes)
+- [Abstract class](#abstract-class)
 - [Inheritance](#inheritance)
 - [Interface](#interfaces):
   - [Implementing interfaces](#implementing-interfaces)
   - [Properties in interfaces](#properties-in-interfaces)
   - [Interfaces Inheritance](#interfaces-inheritance)
   - [Resolving overriding conflicts](#resolving-overriding-conflicts)
+- [Sealed classes and interfaces](#sealed-classes-and-interfaces):
+  - [Declare a sealed class or interface](#declare-a-sealed-class-or-interface)
+  - [Inheritance](#inheritance-1)
+  - [Use sealed classes with when expression](#use-sealed-classes-with-when-expression)
+  - [Use case scenarios](#use-case-scenarios)
 - [Overriding methods](#overriding-methods)
 - [Overriding properties](#overriding-properties)
 - [Derived class initialization order](#derived-class-initialization-order)
@@ -1385,6 +1395,113 @@ println("user == secondUser: ${user == secondUser}")
 println("user == thirdUser: ${user == thirdUser}")   
 // user == thirdUser: false
 ```
+The compiler automatically derives the following members from all properties declared in the primary constructor.
+
+To ensure consistency and meaningful behavior of the generated code, data classes have to fulfill the following requirements:
+- The primary constructor must have at least one parameter.
+- All primary constructor parameters must be marked as `val` or `var`.
+- Data classes cannot be abstract, open, sealed, or inner.
+
+Additionally, the generation of data class members follows these rules with regard to the members' inheritance:
+
+- If there are explicit implementations of `equals()`, `hashCode()`, or `toString()` in the data class body or `final` implementations in a superclass, then these functions are not generated, and the existing implementations are used.
+- If a supertype has `componentN()` functions that are `open` and return compatible types, the corresponding functions are generated for the data class and override those of the supertype. If the functions of the supertype cannot be overridden due to incompatible signatures or due to their being final, an error is reported.
+- Providing explicit implementations for the `component()` and `copy()` functions is not allowed.
+
+Data classes may extend other classes (see Sealed classes for examples).
+
+>✨ On the JVM, if the generated class needs to have a parameterless constructor, default values for the properties have to be specified (see Constructors):
+>
+>   ```kotlin
+>   data class User(val name: String = "", val age: Int = 0)
+>   ```
+
+###### **Properties declared in the class body**
+
+The compiler only uses the properties defined inside the primary constructor for the automatically generated functions. To exclude a property from the generated implementations, declare it inside the class body:
+
+```kotlin
+data class Person(val name: String) {
+    var age: Int = 0
+}
+```
+In the example below, only the `name` property is used by default inside the `toString()`, `equals()`, `hashCode()`, and `copy()` implementations, and there is only one component function, `component1(). The `age` property is declared inside the class body and is excluded. Therefore, two `Person` objects with the same `name` but different `age` values are considered equal since `equals()` only evaluates properties from the primary constructor:
+
+```kotlin
+data class Person(val name: String) {
+  var age: Int = 0
+}
+
+val person1 = Person("John")
+val person2 = Person("John")
+person1.age = 10
+person2.age = 20
+
+println("person1 == person2: ${person1 == person2}") // true
+
+println("person1 with age ${person1.age}: ${person1}")
+// person1 with age 10: Person(name=John)
+
+println("person2 with age ${person2.age}: ${person2}")
+// person2 with age 20: Person(name=John)
+
+```
+###### **Copying**
+
+Use the `copy()` function to copy an object, allowing you to alter **some** of its properties while keeping the rest unchanged. The implementation of this function for the `User` class above would be as follows:
+
+```kotlin
+data class User(val name: String = "", val age: Int = 0){
+}
+
+fun main() {
+    val jack= User(name = "Jack", age = 1)
+    val olderJack = jack.copy(age = 2)
+}
+```
+###### **Data classes and destructuring declarations**
+
+Component functions generated for data classes make it possible to use them in destructuring declarations:
+
+```kotlin
+val jane = User("Jane",35)
+val (name,age) = jane
+
+println("$name, $age years of age")  // Jane, 35 years of age
+```
+
+######  **Standard data classes**
+
+The standard library provides the `Pair` and `Triple` classes. In most cases, though, named data classes are a better design choice because they make the code easier to read by providing meaningful names for the properties.
+#### Abstract class
+
+A class may be declared `abstract`, along with some or all of its members. An abstract member does not have an implementation in its class. You don't need to annotate abstract classes functions with `open`:
+
+```kotlin
+abstract class Polygon {
+  open abstract fun draw()
+}
+
+class Rectangle : Polygon() {
+  override fun draw() {
+    // draw the rectangle
+  }
+}
+```
+
+You can override a non-abstract `open` member with an abstract one. 
+
+```kotlin
+open abstract class Polygon {
+    open fun draw(){}
+}
+
+abstract class WildShape: Polygon() {
+    // Classes that inherit WildShape need to provide their own
+    // draw method instead of using the default on Polygon
+    abstract override fun draw()
+}
+```
 
 #### Inheritance
 
@@ -1535,6 +1652,286 @@ Interfaces **A** and **B** both declare functions **foo()** and **bar()**. Both 
 
 However, if you derive **D** from **A** and **B**, you need to implement all the methods that you have inherited from multiple interfaces, and you need to specify how exactly **D** should implement them. This rule applies both to methods for which you've inherited a single implementation (**bar()**) and to those for which you've inherited multiple implementations (**foo()**).
 
+#### Sealed classes and interfaces
+
+**Sealed** classes and interfaces provide controlled inheritance of your class hierarchies. All direct subclasses of a sealed class are known at of compile time. No other subclasses may appear outside the module and package within which the sealed class is defined. The same logic applies to sealed interfaces and their implementations: once a module with a sealed interface is compiled, no new implementations can be created.
+
+>✨ Direct subclasses are classes that immediately inherit from their superclass.
+>   Indirect subclasses are classes that inherit from more than one level down from their superclass.
+
+When you combine sealed classes and interfaces with the `when` expression, you can cover the behavior of all possible subclasses and ensure that no new subclasses are created to affect your code adversely.
+
+
+Sealed classes are best used for scenarios when:
+- Limited class inheritance is desired: You have a predefined, finite set of subclasses that extend a class, all of which are known at compile time.
+- Type-safe design is required: Safety and pattern matching are crucial in your project. Particularly for state management or handling complex conditional logic. For example, check out [Use sealed classes with when expressions]().
+- Working with closed APIs: You want to robust and maintainable public APIs for libraries that ensure that third-party clients use the APIs as intended.
+
+For more detailed practical applications, see [Use case scenarios]().
+
+>✨ Java 15 introduced a similar concept, where sealed class use the `sealed` keyword along with the `permits` clause to define restricted hierarchies.
+
+###### **Declare a sealed class or interface**
+
+To declare a sealed class or interface, use the `sealed` modifier:
+
+```kotlin
+// Create a sealed interface
+sealed interface Error
+
+// Create a sealed class that implements sealed interface Error
+sealed class IOError(): Error 
+
+// Define subclasses that extend sealed class IOError
+class FileReadError(val file: File): IOError()
+class DatabaseError(val source: DataSource): IOError()
+
+// Create a singleton object implementing the `Error` sealed interface
+object  RuntimeError: Error
+```
+This example could represent a library's API that contains error classes to let library users handle errors that it can throw. If the hierarchy of such error classes includes interfaces or abstract classes visible in the public API, then nothing prevents other developers from implementing or extending them in the client code. Since the library doesn't know about errors declared outside of it, it can't treat them consistently with its own classes. However, with a `sealed` hierarchy of error classes, library authors can be sure that they know all the possible error types and that other error types cannot appear later.
+
+**Constructors**
+
+A sealed class itself is always an abstract class, and as a result, cannot be instantiated directly. However, it may contain or inherit constructors. These constructors aren't for creating instances of the sealed class itself but for its subclasses. Consider the following example with a sealed class called `Error` and its several subclasses, which we instantiate:
+
+```kotlin
+sealed class Error(val message: String) {
+    class NetworkError: Error("Network failure")
+    class DatabaseError: Error("Database cannot be reached")
+    class UnknownError: Error("An unknown error has occurred")
+}
+
+fun main() {
+    val errors = listOf(Error.NetworkError(),Error.DatabaseError(),Error.UnknownError())
+    errors.forEach { println(it.message) }
+}
+
+/// Network failure 
+/// Database cannot be reached 
+/// An unknown error has occurred
+```
+You can use enum classes within our sealed classes to use enum constants to represent states and provide additional detail. Each enum constant exists only as a `single` instance, while subclasses of sealed class may have `multiple` instances. IN the example, the `sealed class Error` along with its several subclasses, employs an `enum` to denote error severity. Each subclass constructor initializes the `severity` and can alter its state:
+
+```kotlin
+enum class ErrorSeverity {MINOR, MAJOR, CRITICAL}
+
+sealed class Error (val severity: ErrorSeverity) {
+    class FileReadError(val file: File): Error(ErrorSeverity.MAJOR)
+    class DatabaseError(val source: DataSource): Error(ErrorSeverity.CRITICAL)
+    object RuntimeError: Error(ErrorSeverity.CRITICAL)
+    // Additional error types can be added here
+}
+```
+
+Constructors of sealed classes can have one of two visibilities: `protected` (by default) or `private`:
+
+```kotlin
+sealed class IOError {
+    // A sealed class constructor has protected visibility by default. It's visible inside this class and its subclasses.
+    constructor()
+  
+    // Private constructor, visible inside this class only.
+    // Using a private constructor in a sealed class allows for even stricter control over instantiation, enabling specific initialization procedures within the class.
+    private constructor(description: String): this()
+  
+    // This will raise an error because public and internal constructors are not allowed in sealed classes
+    // public constructor(code: Int): this()
+}   
+```
+
+###### **Inheritance**
+
+Direct subclasses of sealed class and interfaces must be declared in the same package. They may be top-level or nested inside any number of other named classes, named interfaces, or named objects. Subclasses can have any visibility as long as they are compatible with normal inheritance rules in Kotlin.
+
+Subclasses of sealed classes must have a properly qualified name. They cannot be local or anonymous objects
+
+>✨ `enum` class can't extend a sealed class, or any other class. However, they can implement sealed interfaces:
+>   ```kotlin
+>   sealed interface Error
+>   
+>   // Enum class extending the sealed interface Error
+>   enum class ErrorType : Error {
+>       FILE_ERROR, DATABASE_ERROR
+>   }
+>   ```
+
+These restrictions don't apply to indirect subclasses. If a direct subclass of a sealed class in not marked as sealed, it can be extended in any way that its modifiers allow:
+
+```kotlin
+// Sealed interface `Error` has implementations only in the same package and module.
+sealed interface Error
+
+// Sealed class `IOError` extends `Error` and is extendable only with the same package
+sealed class IOError() : Error
+
+// Open class `CustomerError` extends `Error` and can be extended anywhere it's visible
+open class CustomerError() : Error
+```
+**Inheritance in multiplatform projects**
+
+There is one more inheritance restriction in multiplatform projects: direct subclasses of sealed classes must reside in the same source set. It applies to sealed classes without the expected and actual modifiers.
+
+If a sealed class is declared as `expect` in common source set and have `actual` implementations in platform source set, both `expect` and `actual` versions can have subclasses in their source sets. Moreover, if you use a hierarchical structure, you can create subclasses in any source set between the `expect` and `actual` declarations.
+
+[Learn more about the hierarchical structure of multiplatform projects.]()
+
+
+###### **Use sealed classes with when expression**
+
+The key benefit of using sealed classes comes into play when you use them in a `when` expression. The `when` expression, used with a sealed class, allows use Kotlin compiler to check exhaustively that all possible cases are covered. In such cases, you don't need to add an `else` clause:
+
+```kotlin
+enum class ErrorSeverity { MINOR, MAJOR, CRITICAL }
+
+sealed class Error(val severity: ErrorSeverity) {
+  class FileReadError(val file: File) : Error(ErrorSeverity.MAJOR)
+  class DatabaseError(val source: DataSource) : Error(ErrorSeverity.CRITICAL)
+  object RuntimeError : Error(ErrorSeverity.CRITICAL)
+  // Additional error types can be added here
+}
+
+// Function to log errors
+fun log(e: Error) = when (e) {
+  is Error.FileReadError -> println("Error while reading file ${e.file}")
+  is Error.DatabaseError -> println("Error while reading from database ${e.source}")
+  is Error.RuntimeError -> println("Runtime error")
+  else -> {} // No `else` clause is required because all the cases are covered.
+}
+```
+>✨ In multiplatform project, if you have a sealed class with a `when` expression as an expected declaration in your common code, you still need an `else` branch. This is because subclasses of `actual` platform implementations may extend sealed classes that aren't known in the common code.
+
+###### **Use case scenarios**
+
+Let's explore some practical scenarios where sealed classes and interfaces can be particularly useful.
+
+**State management in UI applications**
+
+You can use sealed classes to represent different UI states an application. This approach allows for structured and safe handling of UI changes. This example demonstrates how to manage various UI states:
+
+```kotlin
+sealed class UIState {
+    data object Loading : UIState()
+    data class Success(val data: String): UIState()
+    data class Error(val exception: Exception): UIState()
+}
+
+fun updateUI(state: UIState) {
+    when(state) {
+        is UIState.Loading -> showLoadingIndicator()
+        is UIState.Success -> showData(state.data)
+        is UIState.Error -> showError(state.exception)
+        else -> {}
+    }
+}
+```
+
+**Payment method handling**
+
+In practical business applications, handling various payment methods efficiently is a common requirement. You can use sealed classes with `when` expressions to implement such business logic. By representing different payment methods as subclasses of a sealed class, it establishes a clear and manageable structure for processing transactions.
+
+```kotlin
+sealed class Payment {
+    data class CreditCard(val number: String, val expiryDate: String): Payment()
+    data class PayPal(val email: String): Payment()
+    data object Cash: Payment()
+}
+
+fun processPayment(payment: Payment){
+    when(payment) {
+        is Payment.CreditCard -> processCreditCardPayment(payment.number,payment.expiryDate)
+        is Payment.PayPal -> procressPayPalPayment(payment.email)
+        is Payment.Cash -> processCardPayment()
+        else -> {}
+    }
+}
+```
+`Payment` is a sealed class that represents different payment methods in an e-commerce system: `CreditCard`, `PayPal`, and `Cash`. Each subclass can have its specific properties, like `number` and `expiryDate` for `CreditCard`, and `email` for `PayPal`.
+
+The `processPayment()` function demonstrates how to handle different payment methods. This approach ensures that all possible payment types are considered, and the system remains flexible for new payment methods to be added in the future.
+
+**API request-response handling**
+
+You can use sealed classes and sealed interfaces to implement a user authentication system that handles API requests and responses. The user authentication system has login and logout functionalities. The `ApiRequest` sealed interface defines specific request types: `LoginRequest` for login, and `LogoutRequest` for logout operations. The sealed class, `ApiResponse`, encapsulates different response scenarios: `UserSuccess` with user data, `UserNotFound` for absent users, and `Error` for any failures. The `handleRequest` function processes these requests in a type-safe manner using a `when` expression, while `getUserById` simulates user retrieval:
+
+```kotlin
+// Import necessary modules
+import io.ktor.server.application.*
+import io.ktor.server.resources.*
+
+import kotlinx.serialization.*
+
+// Define the sealed interface for API requests using Ktor resources
+@Resource("api")
+sealed interface ApiRequest
+
+@Serializable
+@Resource("login")
+data class LoginRequest(val username: String, val password: String) : ApiRequest
+
+
+@Serializable
+@Resource("logout")
+object LogoutRequest : ApiRequest
+
+// Define the ApiResponse sealed class with detailed response types
+sealed class ApiResponse {
+    data class UserSuccess(val user: UserData) : ApiResponse()
+    data object UserNotFound : ApiResponse()
+    data class Error(val message: String) : ApiResponse()
+}
+
+// User data class to be used in the success response
+data class UserData(val userId: String, val name: String, val email: String)
+
+// Function to validate user credentials (for demonstration purposes)
+fun isValidUser(username: String, password: String): Boolean {
+    // Some validation logic (this is just a placeholder)
+    return username == "validUser" && password == "validPass"
+}
+
+// Function to handle API requests with detailed responses
+fun handleRequest(request: ApiRequest): ApiResponse {
+    return when (request) {
+        is LoginRequest -> {
+            if (isValidUser(request.username, request.password)) {
+                ApiResponse.UserSuccess(UserData("userId", "userName", "userEmail"))
+            } else {
+                ApiResponse.Error("Invalid username or password")
+            }
+        }
+        is LogoutRequest -> {
+            // Assuming logout operation always succeeds for this example
+            ApiResponse.UserSuccess(UserData("userId", "userName", "userEmail")) // For demonstration
+        }
+    }
+}
+
+// Function to simulate a getUserById call
+fun getUserById(userId: String): ApiResponse {
+    return if (userId == "validUserId") {
+        ApiResponse.UserSuccess(UserData("validUserId", "John Doe", "john@example.com"))
+    } else {
+        ApiResponse.UserNotFound
+    }
+    // Error handling would also result in an Error response.
+}
+
+// Main function to demonstrate the usage
+fun main() {
+    val loginResponse = handleRequest(LoginRequest("user", "pass"))
+    println(loginResponse)
+
+    val logoutResponse = handleRequest(LogoutRequest)
+    println(logoutResponse)
+
+    val userResponse = getUserById("validUserId")
+    println(userResponse)
+
+    val userNotFoundResponse = getUserById("invalidId")
+    println(userNotFoundResponse)
+}
+```
 #### Overriding methods
 
 Kotlin requires explicit modifiers for overridable members and overrides: 
