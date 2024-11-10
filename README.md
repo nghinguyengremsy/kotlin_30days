@@ -93,6 +93,10 @@
   - [Representation](#representation)
   - [Inline classes vs type aliases](#inline-classes-vs-type-aliases)
   - [Inline classes and delegation](#inline-classes-and-delegation)
+- [Object declarations and expressions](#object-declaration-and-expressions):
+  - [Object declarations](#object-declarations)
+  - [Object expressions](#object-expressions)
+  - [Behavior difference between object declarations and expressions](#behavior-difference-between-object-declarations-and-expressions)
 - [Overriding methods](#overriding-methods)
 - [Overriding properties](#overriding-properties)
 - [Derived class initialization order](#derived-class-initialization-order)
@@ -2357,6 +2361,442 @@ fun main() {
 
 
 ```
+
+#### Object declaration and expressions
+
+In Kotlin, objects allow you to define a class and create an instance of it in a single step. This is useful when you need either a reusable singleton instance or a one-time object. To handle these scenarios, Kotlin provides two key approaches: **object declarations** for creating singletons and **object expressions** for creating anonymous, one-time objects
+
+>✨ A singleton ensures that a class has only one instance and provides a global point of access to it.
+
+Object declarations and object expression are best used for scenarios when:
+
+- **Using singletons for shared resources**: You need to ensure that only one instance of a class exists throughout the application. For example, managing a database connection pool.
+- **Creating factory methods**: You need a convenient way to create instances efficiently. Companion objects allow you to define class-level functions and properties tied to a class, simplifying the creation and management of these instances.
+- **Modifying existing class behavior temporarily**: You want to modify the behavior of an existing class without the need to create new subclass. For example, adding temporary functionality to an object for a specific operation.
+- **Type-safe design is required**: You require one-time implementations of interfaces or abstract classes using object expressions. This can be useful for scenarios like a button click handler.
+
+###### **Object declarations**
+
+You can create single instances of objects in Kotlin using object declarations, which always have a name following the `object` keyword. This allows you to define a class and create an instance of it in a single step, which is useful for implementing singletons:
+
+```kotlin
+// Declare a singleton object to manage data providers
+object DataProviderManager{
+    private val providers = mutableListOf<DataProvider>()
+    
+    // Register a new data provider
+    fun registerDataProvider(provider: DataProvider) {
+        providers.add(provider)
+    }
+  
+    // Retrieves all registered data providers
+  
+    val allDataProvider: Collection<DataProvider>
+      get() = providers
+  
+}
+```
+
+>✨ The initialization of an object declaration is thread-safe and done on first access.
+
+To refer to the object, use its name directly:
+
+```kotlin
+DataProviderManager.registerDataProvider(exampleProvider)
+```
+
+Object declarations can also have subtypes, similar to how anonymous objects can inherit from existing classes or implement interfaces:
+
+```kotlin
+object DefaultListener : MouseAdapter() {
+    override fun mouseClicked(e: MouseEvent) { ... }
+
+    override fun mouseEntered(e: MouseEvent) { ... }
+}
+```
+
+Like variable declarations, object declarations are not expressions, so they cannot be used on the right-hand side of an assignment statement:
+
+```kotlin
+// Syntax error: An object declaration cannot bind a name.
+
+val myObject= object MySingleton {
+    val name = "Singleton"
+}
+```
+
+Object declarations cannot be local, which means they cannot be nested directly inside a function. However, they can be nested within another object declarations or non-inner classes.
+
+
+**Data objects**
+
+When printing a plain object declaration in Kotlin, the string representation contains both its name and the hash of the `object`:
+
+```kotlin
+object MyObject 
+
+fun main() {
+    println(MyObject)
+    // MyObject@hashcode
+}
+```
+
+However, by making an object declaration with the `data` modifier, you can instruct the compiler to return actual name of the object when calling `toString()`, the same way it works for data classes:
+
+```kotlin
+data object MyObject {
+    val value: Int = 3
+}
+
+fun main() {
+    println(MyObject)
+    // MyObject
+}
+```
+
+Additionally, the compiler generates several functions for your `data` object`:
+
+- `toString()` returns the name of the data object.
+- `equals()`/`hashCode()` enables equality checks and hash-based collections.
+
+>✨ You cannot provide a custom `equals()` and `hashCode()` implementation for a `data object`.
+
+The `equals()` function for a `data object`  ensures that all objects that have the type of your `data oject` are considered equal. In most cases, you will only have a single instance of your `data object` at runtime, since a `data object` declares a singleton. However, in the edge case where another object of the same type is generated at runtime (for example, by using platform reflection with java.lang.reflect or a JVM serialization library that uses this API under the hood), this ensures that the objects are treated as being equal.
+>✨ Make sure that you only compare `data objects` structurally (using the == operator) and never by reference (using the === operator). This helps you to avoid pitfalls when more than one instance of a data object exist at runtime.
+
+```kotlin
+import java.lang.reflect.Constructor
+
+data object MySingleton
+
+fun main() {
+    val evilTwin = createInstanceViaReflection()
+
+    println(MySingleton)
+    // MySingleton
+
+    println(evilTwin)
+    // MySingleton
+
+    // Even when a library forcefully creates a second instance of MySingleton,
+    // its equals() function returns true:
+    println(MySingleton == evilTwin)
+    // true
+
+    // Don't compare data objects using ===
+    println(MySingleton === evilTwin)
+    // false
+}
+
+fun createInstanceViaReflection(): MySingleton {
+    // Kotlin reflection does not permit the instantiation of data objects.
+    // This creates a new MySingleton instance "by force" (using Java platform reflection)
+    // Don't do this yourself!
+    return (MySingleton.javaClass.declaredConstructors[0].apply { isAccessible = true } as Constructor<MySingleton>).newInstance()
+}
+```
+The generated `hashCode()` function has a behavior that is consistent with the `equals()` function, so that all runtime instances of a `data object` have the same hash code.
+
+*Differences between data object and object classes*
+
+While `data object` and `data class` declarations are often used together and have some similarities, there are some functions that are not generated for `data object`:
+- No `copy()` function. Because a `data object` is intended to be used as singleton, no `copy()` function is generated. Singletons restrict the instantiation of a class to a single instance, which would be violated by allowing copies of the instance to be created.
+- No `componentN()` function. Unlike a `data class`, a `data object` does not have any data properties. Since attempting to destructure such an object without data properties wouldn't make sense, no `componentN()` functions are generated.
+
+*Use data objects with sealed hierarchies*
+
+Data object declarations are particularly useful for sealed hierarchies like sealed classes or sealed interfaces. They allow you to maintain symmetry with any data classes you may have defined alongside the object.
+
+In this example, declaring `EndOfFile` as `data object` instead of a plain `object` means that it will get the `toString()` function without the need to override it manually:
+
+
+```kotlin
+sealed interface ReadResult
+
+data class Number(val number:Int): ReadResult
+data class Text(val text: String): ReadResult 
+data object EndOfFile: ReadResult
+fun main() {
+  println(Number(7))
+  // Number(number=7)
+  println(EndOfFile)
+  // EndOfFile
+}
+```
+
+**Companion objects**
+
+Companion objects allow you to define class-level functions and properties. This makes it easy to create factory methods, hold constants, and access shared utilities.
+
+An object declaration inside a class can be marked with `companion` keyword:
+
+```kotlin
+class MyClass {
+    
+    companion object Factory {
+        fun create(): MyClass = MyClass()
+    }
+}
+```
+Members of the `companion object` can be called simply by using the class name as the qualifier:
+
+```kotlin
+class User(val name: String) {
+    // Defines a companion object that acts as a factory for creating User instances
+    companion object Factory {
+        fun create(name: String): User = User(name)
+    }
+}
+
+fun main(){
+    // Calls the companion object's factory method using the class name as the qualifier. 
+    // Creates a new User instance
+    val userInstance = User.create("John Doe")
+    println(userInstance.name)
+    // John Doe
+}
+```
+The name of the `companion object` can be omitted, in which case the name `Companion` is used:
+
+```kotlin
+class User(val name: String) {
+    // Defines a companion object without a name
+    companion object { }
+}
+
+// Accesses the companion object
+val companionUser = User.Companion
+```
+
+
+Class members can access `private` members of their corresponding `companion object`:
+
+```kotlin
+class User(val name: String) {
+    companion object {
+        private val defaultGreeting = "Hello"
+    }
+
+    fun sayHi() {
+        println(defaultGreeting)
+    }
+}
+User("Nick").sayHi()
+// Hello
+```
+When a class name is used by itself, it acts as a reference to the companion object of the class, regardless of whether the companion object is named or not:
+
+```kotlin
+class User1 {
+    // Defines a named companion object
+    companion object Named {
+        fun show(): String = "User1's Named Companion Object"
+    }
+}
+
+// References the companion object of User1 using the class name
+val reference1 = User1
+
+class User2 {
+    // Defines an unnamed companion object
+    companion object {
+        fun show(): String = "User2's Companion Object"
+    }
+}
+
+// References the companion object of User2 using the class name
+val reference2 = User2
+```
+Although members of companion objects in Kotlin look like static members from other languages, they are actually instance members of the companion object, meaning they belong to the object itself. This allows companion objects to implement interfaces:
+
+```kotlin
+interface Factory<T> {
+    fun create(name: String): T
+}
+
+class User(val name: String) {
+    // Defines a companion object that implements the Factory interface
+    companion object : Factory<User> {
+        override fun create(name: String): User = User(name)
+    }
+}
+
+fun main() {
+    // Uses the companion object as a Factory
+    val userFactory: Factory<User> = User
+    val newUser = userFactory.create("Example User")
+    println(newUser.name)
+    // Example User
+}
+```
+However, on the JVM, you can have members of companion objects generated as real static methods and fields if you use the @JvmStatic annotation. See the Java interoperability section for more detail.
+
+
+###### **Object expressions**
+
+Object expressions declare a class and create an instance of that class, but without naming either of them. These classes are useful for one-time use. They can be created from scratch, inherit from existing classes, or implement interfaces. Instances of these classes are called anonymous objects because they are defined by an expression, not a name.
+
+**Create anonymous objects from scratch**
+
+Object expressions start with `object` keyword.
+
+If the object does not extend any classes or implement interfaces, you can define an object's members directly inside curly braces after the `object` keyword:
+
+```kotlin
+val helloWorld = object {
+    val hello = "Hello"
+    val world = "World"
+    // Object expressions extend the Any class, which already has a toString() function,
+    // so it must be overridden
+    override fun toString() = "$hello $world"
+}
+
+print(helloWorld)
+// Hello World
+```
+
+**Inherit anonymous objects from supertypes**
+
+To create an anonymous object that inherits from some type (or types), specify this type after `object` and a colon `:`. Then implement or override the members of this class as if you were inheriting from it:
+
+```kotlin
+window.addMouseListener(object : MouseAdapter() {
+    override fun mouseClicked(e: MouseEvent) { /*...*/ }
+
+    override fun mouseEntered(e: MouseEvent) { /*...*/ }
+})
+```
+
+If a supertype has a constructor, pass the appropriate constructor parameters to it. Multiple supertypes can be specified, separated by commas, after the colon:
+
+```kotlin
+// Creates an open class BankAccount with a balance property
+open class BankAccount(initialBalance: Int) {
+    open val balance: Int = initialBalance
+}
+
+// Defines an interface Transaction with an execute() function
+interface Transaction {
+    fun execute()
+}
+
+// A function to perform a special transaction on a BankAccount
+fun specialTransaction(account: BankAccount) {
+    // Creates an anonymous object that inherits from the BankAccount class and implements the Transaction interface
+    // The balance of the provided account is passed to the BankAccount superclass constructor
+    val temporaryAccount = object : BankAccount(account.balance), Transaction {
+
+        override val balance = account.balance + 500  // Temporary bonus
+
+        // Implements the execute() function from the Transaction interface
+        override fun execute() {
+            println("Executing special transaction. New balance is $balance.")
+        }
+    }
+    // Executes the transaction
+    temporaryAccount.execute()
+}
+```
+
+**Use anonymous objects as return and value types**
+
+When you return anonymous object from a local or `private` function or property (but not an inline function), all the members of that anonymous object are accessible through that function or property:
+
+```kotlin
+class UserPreferences {
+    private fun getPreferences() = object {
+        val theme: String = "Dark"
+        val fontSize: Int = 14
+    }
+
+    fun printPreferences() {
+        val preferences = getPreferences()
+        println("Theme: ${preferences.theme}, Font Size: ${preferences.fontSize}")
+    }
+}
+```
+
+This allows you to return an anonymous object with specific properties, offering a simple way to encapsulate data or behavior without creating a separate class.
+
+If a function or property that returns an anonymous object is `public` or `private`, its actual type is:
+
+- `Any` if the anonymous object doesn't have a declared supertype.
+- The declared supertype of the anonymous object, if there is exactly one such type.
+- The explicitly declared type if there is more than one declared supertype.
+
+In all these cases, members added in the anonymous object are not accessible. Overridden members are accessible if they are declared in the actual type of the function or property. For example:
+
+```kotlin
+interface Notification {
+    // Declares notifyUser() in the Notification interface
+    fun notifyUser()
+}
+
+interface DetailedNotification
+
+class NotificationManager {
+    // The return type is Any. The message property is not accessible.
+    // When the return type is Any, only members of the Any class are accessible.
+    fun getNotification() = object {
+        val message: String = "General notification"
+    }
+
+    // The return type is Notification because the anonymous object implements only one interface
+    // The notifyUser() function is accessible because it is part of the Notification interface
+    // The message property is not accessible because it is not declared in the Notification interface
+    fun getEmailNotification() = object : Notification {
+        override fun notifyUser() {
+            println("Sending email notification")
+        }
+        val message: String = "You've got mail!"
+    }
+
+    // The return type is DetailedNotification. The notifyUser() function and the message property are not accessible
+    // Only members declared in the DetailedNotification interface are accessible
+    fun getDetailedNotification(): DetailedNotification = object : Notification, DetailedNotification {
+        override fun notifyUser() {
+            println("Sending detailed notification")
+        }
+        val message: String = "Detailed message content"
+    }
+}
+```
+
+**Access variables from anonymous objects**
+
+Code within the body of object expressions can access variables from the enclosing scope:
+
+```kotlin
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
+
+fun countClicks(window: JComponent) {
+    var clickCount = 0
+    var enterCount = 0
+
+    // MouseAdapter provides default implementations for mouse event functions
+    // Simulates MouseAdapter handling mouse events
+    window.addMouseListener(object : MouseAdapter() {
+        override fun mouseClicked(e: MouseEvent) {
+            clickCount++
+        }
+
+        override fun mouseEntered(e: MouseEvent) {
+            enterCount++
+        }
+    })
+    // The clickCount and enterCount variables are accessible within the object expression
+}
+```
+
+###### **Behavior difference between object declarations and expressions**
+
+There are differences in the initialization behavior between object declarations and object expressions:
+
+- Object expressions are executed (and initialized) `immediately`, where they are used.
+- Object declarations are initialized `lazily`, when accessed for the first time.
+- A companion object is initialized when the corresponding class is loaded (resolved) that matches the semantics of a Java static initializer.
+
 #### Overriding methods
 
 Kotlin requires explicit modifiers for overridable members and overrides: 
@@ -2381,7 +2821,7 @@ The `override` modifier is required for `Circle.draw()`. If it's missing, the co
 A member marked `override` is itself open, so it may be overridden in subclasses. If you want to prohibit re-overriding, use `final`: 
 
 ```kotlin
-open class  Rectangle(): Shape() { 
+open class  Rectangle(): Shape() {  
     final override fun draw(){}
 }
 ```
