@@ -214,7 +214,7 @@
 [Kotlin for Android](#kotlin-for-android)
 
 
-## Variables and Data Types
+# Variables and Data Types
 
 In Kotlin, variables are declared using two keywords:
 - val for immutable variables (values that can't be changed).
@@ -268,7 +268,7 @@ In total, Kotlin has the following basic types:
 For more information on basic types and their properties, see [Basic types](https://kotlinlang.org/docs/basic-types.html)
 
 
-## Collections
+# Collections
 
 When programming, it's useful to be able to group data for later processing.
 Kotlin provides collections for exactly this purpose.
@@ -283,7 +283,7 @@ Kotlin has the following collections for grouping items:
 
 Each collection type can be mutable or read only.
 
-#### List
+## List
 
 Lists store items in the order that they are added, and allow for duplicate items.
 
@@ -487,11 +487,11 @@ println(readOnlyJuiceMenu.values) // [100, 190, 100]
 ```
 For more information on what you can do with collections, see [Collections]()
 
-## Control Structures
+# Control Structures
 
 Kotlin has familiar control structures like `if`, `when`, `for` and `while`.
 
-#### 1. If Statement:
+## 1. If Statement:
 
 The `if` statement works just like in many languages, but in Kotlin, it can also be an expression (it returns a value).
 
@@ -499,7 +499,7 @@ The `if` statement works just like in many languages, but in Kotlin, it can also
 val max = if (a > b) a else b
 ```
 
-#### 2. When Expression (similar to switch in other languages):
+## 2. When Expression (similar to switch in other languages):
 
 ```kotlin
 val day = 3
@@ -547,7 +547,7 @@ fun main() {
 }
 ```
 
-#### 3. Ranges  
+## 3. Ranges  
 
 The most common way to create a range in Kotlin is to use the `..` operator. For example, 1..4 is equivalent to 1, 2, 3 ,4.
 
@@ -564,7 +564,7 @@ You can also do the same with `Char` ranges:
 
 
 
-#### 4. `for` loop
+## 4. `for` loop
 
 `for` loops are typically used to iterate over ranges, arrays, or collections.
 
@@ -612,7 +612,7 @@ for ((index,value) in items.withIndex()){
     println("Item at $index is $value")
 }
 ```
-#### 5. `while` loop
+## 5. `while` loop
 
 The `while` loop repeatedly executes a block of code as long as the condition is true.
 
@@ -633,7 +633,7 @@ while (i>0){
     i--
 }
 ```
-#### 6. `do-while` loop
+## 6. `do-while` loop
 
 The `do-while` loop is similar to `while`, but it guarantees that the block of code will execute at least once, even if the condition is initially false.
 
@@ -656,7 +656,7 @@ do{
 ```
 
 
-## Functions
+# Functions
 
 You can declare our own functions in Kotlin using the `fun` keyword.
 
@@ -699,7 +699,7 @@ fun main() {
 ```
 >✨ We recommend in our coding conventions that you name functions starting with a lowercase letter and use camel case with no underscores.
 
-#### Named arguments
+## Named arguments
 
 For concise code, when calling your function, you don't have to include parameter names. However, including parameter names does make your code easier to read. This is called using **named parameters**. If you do include parameter names, then you can write the parameters in any order.
 
@@ -718,7 +718,7 @@ fun main() {
 }
 ```
 
-#### Default parameter values
+## Default parameter values
 
 You can define default values for your function parameters. Any parameter with a default value can be omitted when calling your function. To declare a default value, use the assignment operator = after the type:
 
@@ -739,7 +739,7 @@ fun main() {
 ```
 >✨ You can skip specific parameters with default values, rather than omitting them all. However, after the first skipped parameter, you must name all subsequent parameters.
 
-#### Functions without return 
+## Functions without return 
 
 If your function doesn't return a useful value then its return type is `Unit`. `Unit` is a type with only one value - `Unit`. You don't have to declare that `Unit` is returned explicitly in your function body. This mean that you don't have to use `return` keyword or declare a return type:
 
@@ -754,7 +754,7 @@ fun main() {
 }
 ```
 
-#### Single-expression functions 
+## Single-expression functions 
 
 To make your code more concise, you can use single-expression functions. For example, the `sum()` function can be shortened:
 
@@ -782,7 +782,7 @@ However, if you want your code to be quickly understood by other developers, it'
 
 >✨ If you use `{}` curly braces to declare your function body, you must declare the return type unless it's the `Unit` type.
 
-#### Early returns in functions
+## Early returns in functions
 
 
 To stop the code in your function from being processed further than a certain point, use `return` keyword. This example uses `if` to return from a function early if the conditional expression is found to be true:
@@ -820,7 +820,7 @@ fun main(){
 }
 ```
 
-#### Lambda expressions
+## Lambda expressions
 
 Kotlin allows you to write even more concise code for functions by using lambda expressions.
 
@@ -873,7 +873,7 @@ Lambda expressions can be used in a number of ways. You can:
 - Return a lambda expression from a function
 - Invoke a lambda expression on its own
 
-###### **Pass to another function**
+#### Pass to another function
 
 A great example of when it's useful to pass a lambda expression to a function, is using the `.filter()` function on collections:
 
@@ -927,7 +927,7 @@ The `.map()` function accepts a lambda expression as a transform function:
 
 - `{ x -> x * 3 }` takes each element of the list and returns that element multiplied by 3.
 
-###### **Function types**
+#### Function types
 
 Before you can return a lambda expression from a function, you first need to understand **function types**.
 
@@ -1004,7 +1004,7 @@ println(listOf(1, 2, 3).fold(0, { x, item -> x + item })) // 6
 println(listOf(1, 2, 3).fold(0) { x, item -> x + item })  // 6
 ```
 
-#### Inline functions
+## Inline functions
 
 Using higher-order functions imposes certain runtime penalties: each function is an object, and it captures a closure. A closure is a scope of variables that can be accessed in the body of the function. Memory allocations (both for function objects and classes) and virtual calls introduce runtime overhead.
 
@@ -1036,7 +1036,7 @@ The `inline` modifier affects both the function itself and the lambdas passed to
 Inlining may cause the generated code to grow. However, if you do it in a reasonable way (avoiding inlining large functions), it will pay off in performance, especially at "megamorphic" call-sites inside loops.
 
 
-###### **noinline**
+#### noinline
 
 If you don't want all the lambdas passed to an inline function to be inlined, mark some of your function parameters with the `noinline` modifier:
 
@@ -1050,7 +1050,7 @@ Inlinable lambdas can only be called inside inline functions or passed as inlina
 >✨ If an inline function has no inlinable function parameters and no reified type parameters, the compiler will issue a warning, since inlining such functions is very unlikely to be beneficial (you can use the `@Suppress("NOTHING_TO_INLINE")` annotation to suppress the warning if you are sure the inlining is needed).
 
 
-###### **Non-local returns**
+#### Non-local returns
 
 In Kotlin, you can only use a normal, unqualified `return` to exit a named function or an anonymous function. To exit a lambda, use a label. A bare `return` is forbidden inside a lambda because a lambda cannot make the enclosing function `return`:
 
@@ -1097,7 +1097,7 @@ inline fun f(crossinline body: () -> Unit) {
 
 >✨ `break` and `continue` are not yet available in inlined lambdas, but we are planning to support them, too.
 
-###### **Reified type parameters**
+#### Reified type parameters
 
 Sometimes you need to access a type passed as a parameter:
 
@@ -1150,7 +1150,7 @@ fun main(s: Array<String>) {
 
 Normal functions (not marked as inline) cannot have reified parameters. A type that does not have a run-time representation (for example, a non-reified type parameter or a fictitious type like `Nothing`) cannot be used as an argument for a reified type parameter.
 
-###### **Inline properties**
+#### Inline properties
 
 The `inline` modifier can be used on accessors of properties that don't have backing fields. You can annotate individual property accessors:
 
@@ -1174,7 +1174,7 @@ inline var bar: Bar
 At the call site, inline accessors are inlined as regular inline functions.
 
 
-###### **Restrictions for public API inline functions** 
+#### Restrictions for public API inline functions 
 
 
 When an inline function is `public` or `protected` but is not a part of a `private` or `internal` declaration, it is considered a module's public API. It can be called in other modules and is inlined at such call sites as well.
@@ -1185,7 +1185,7 @@ To eliminate the risk of such incompatibility being introduced by a change in a 
 
 An `internal` declaration can be annotated with `@PublishedApi`, which allows its use in public API inline functions. When an `internal` inline function is marked as `@PublishedApi`, its body is checked too, as if it were public.
 
-## Classes
+# Classes
 
 Classes can contain:
 
@@ -1203,7 +1203,7 @@ class Customer
 
 >✨ Kotlin does not have a `new` keyword.
 
-#### Constructors
+## Constructors
 
 A class in Kotlin has a **primary constructor** and possibly one or more **secondary constructors**. The primary constructor is declared in the class header, and it goes after the class name and optional type parameters.
 
@@ -1278,7 +1278,7 @@ class Customer public @Inject constructor(name: String)
 ```
 Learn more about [visibility modifiers]()
 
-#### Secondary constructors
+## Secondary constructors
 
 A class can also declare **secondary constructors**, which are prefixed with `constructor`:
 
@@ -1336,7 +1336,7 @@ class DontCreateMe private constructor() {}
 >   class Customer(val customerName: String = "")
 >   ```
 
-#### Create instance
+## Create instance
 
 To create an object from a class, you can declare a class instance using a constructor.
 
@@ -1362,7 +1362,7 @@ In the example:
 Kotlin classes can have many constructors, including ones that you define yourself.
 
 
-#### Properties
+## Properties
 
 Characteristics of a class's object can be declared in properties. You can declare properties for a class:
 
@@ -1391,7 +1391,7 @@ Just like with function parameters, class properties can have default values:
 class Contact(val id: Int, var email: String = "example@gmail.com")
 ```
 
-###### **Getters and setters**
+#### Getters and setters
 
 The full syntax for declaring a property is as follows: 
 ```kotlin
@@ -1492,7 +1492,7 @@ public val table: Map<String,Int>
   }
 ```
 >✨ On the JVM: Access to private properties with default getters and setters if optimized to avoid function call overhead.
-###### **Compile-time constants**
+#### Compile-time constants
 
 If the value of a read-only property is known at compile time, mark it as a **compile time constant** using the `const` modifier. Such a property needs to fulfill the following requirements:
 
@@ -1508,7 +1508,7 @@ Such properties can also be used in annotations:
 const val SUBSYSTEM_DEPRECATED: String = "This subsystem is deprecated"
 @Deprecated(SUBSYSTEM_DEPRECATED) fun foo(){}
 ```
-###### **Late-initialized properties and variables**
+#### Late-initialized properties and variables
 
 Normally, properties declared as having a non-nullable type must be initialized in the constructor. However, it's often the case that doing so is not convenient. For example, properties can be initialized through dependency injection, or in the setup method of a unit test. In these cases, you cannot supply a non-nullable initializer in the constructor, but you still want to avoid null checks when referencing the property inside the body of a class.
 
@@ -1543,18 +1543,18 @@ if(foo::bar.isInitialized){
 
 This check is only available for properties that are lexically accessible when declared in the same type, in one of the outer types, or at top level in the same file.
 
-###### **Overriding properties**
+#### Overriding properties
 
 See [Overriding properties](#overriding-properties-1)
 
-###### **Delegated properties**
+#### Delegated properties
 
 The most common kind of property simply reads from (and maybe writes to) a backing field, but custom getters and setters allow you to use properties so one can implement any sort of behavior of a property. Somewhere in between the simplicity ò the first kind and variety of the second, there are common patterns for what properties can do. A few examples: lazy values, reading from a map by a given key, accessing a database, notifying a listener on access.
 
 Such common behaviors can be implemented as libraries using delegated properties.
 
 
-#### Access properties
+## Access properties
 
 To access a property of an instance, write the name of the property after the instance name appended with a period `.`:
 
@@ -1581,7 +1581,7 @@ fun main() {
 >       println("Their email address is: ${contact.email}")    
 >   ```
 
-#### Member functions
+## Member functions
 
 In addition to declaring properties as part of an object's characteristics, you can also define an object's behavior with member functions.
 
@@ -1602,7 +1602,7 @@ fun main() {
 }
 ```
 
-#### Data classes
+## Data classes
 
 Kotlin has data classes which are particularly useful for storing data. Data classes have the same functionality as classes, but they come automatically with additional member functions. These member functions allow you to easily print the instance to readable output, compare instances of as class, copy instances, and more. As these functions are automatically available, you don't have to spend time writing the same boilerplate code for each of your classes.
 
@@ -1655,7 +1655,7 @@ Data classes may extend other classes (see Sealed classes for examples).
 >   data class User(val name: String = "", val age: Int = 0)
 >   ```
 
-###### **Properties declared in the class body**
+#### Properties declared in the class body
 
 The compiler only uses the properties defined inside the primary constructor for the automatically generated functions. To exclude a property from the generated implementations, declare it inside the class body:
 
@@ -1685,7 +1685,7 @@ println("person2 with age ${person2.age}: ${person2}")
 // person2 with age 20: Person(name=John)
 
 ```
-###### **Copying**
+#### Copying
 
 Use the `copy()` function to copy an object, allowing you to alter **some** of its properties while keeping the rest unchanged. The implementation of this function for the `User` class above would be as follows:
 
@@ -1698,7 +1698,7 @@ fun main() {
     val olderJack = jack.copy(age = 2)
 }
 ```
-###### **Data classes and destructuring declarations**
+#### Data classes and destructuring declarations
 
 Component functions generated for data classes make it possible to use them in destructuring declarations:
 
@@ -1709,10 +1709,10 @@ val (name,age) = jane
 println("$name, $age years of age")  // Jane, 35 years of age
 ```
 
-######  **Standard data classes**
+#### Standard data classes
 
 The standard library provides the `Pair` and `Triple` classes. In most cases, though, named data classes are a better design choice because they make the code easier to read by providing meaningful names for the properties.
-#### Abstract class
+## Abstract class
 
 A class may be declared `abstract`, along with some or all of its members. An abstract member does not have an implementation in its class. You don't need to annotate abstract classes functions with `open`:
 
@@ -1742,7 +1742,7 @@ abstract class WildShape: Polygon() {
 }
 ```
 
-#### Inheritance
+## Inheritance
 
 All classes in Kotlin have a common superclass, `Any`, which is default superclass for a class with no supertypes declared:
 
@@ -1778,7 +1778,7 @@ class MyView: View {
 }
 ```
 
-#### Interfaces
+## Interfaces
 
 Interfaces in Kotlin can contain declarations of abstract methods, as well as method implementations. What makes them different from abstract classes is that interfaces cannot store state. They can have properties, but these need to be abstract or provide accessor implementations.
 
@@ -1792,7 +1792,7 @@ interface MyInterface {
     }
 }
 ```
-###### **Implementing interfaces**
+#### Implementing interfaces
 
 A class or object can implement one or more interfaces:
 
@@ -1804,7 +1804,7 @@ class Child: MyInterface {
 }
 ```
 
-###### **Properties in interfaces**
+#### Properties in interfaces
 
 You can declare properties in interfaces. A property declared in an interface can either be abstract or provide implementations for accessors. Properties declared in interfaces can't have backing fields, and therefore accessors declared in interfaces can't reference them:
 
@@ -1824,7 +1824,7 @@ class Child: MyInterface {
 }
 ```
 
-###### **Interfaces Inheritance**
+#### Interfaces Inheritance
 
 An interface can derive from other interfaces, meaning it can both provide implementations for their members and declare new functions and properties. Quite naturally, classes implementing such an interface are only required to define the missing implementations:
 
@@ -1848,7 +1848,7 @@ data class Employee(
 ): Person
 ```
 
-###### **Resolving overriding conflicts**
+#### Resolving overriding conflicts
 
 When you declare many types in your supertype list, you may inherit more than one implementation of the same method:
 
@@ -1891,7 +1891,7 @@ Interfaces **A** and **B** both declare functions **foo()** and **bar()**. Both 
 
 However, if you derive **D** from **A** and **B**, you need to implement all the methods that you have inherited from multiple interfaces, and you need to specify how exactly **D** should implement them. This rule applies both to methods for which you've inherited a single implementation (**bar()**) and to those for which you've inherited multiple implementations (**foo()**).
 
-#### Sealed classes and interfaces
+## Sealed classes and interfaces
 
 **Sealed** classes and interfaces provide controlled inheritance of your class hierarchies. All direct subclasses of a sealed class are known at of compile time. No other subclasses may appear outside the module and package within which the sealed class is defined. The same logic applies to sealed interfaces and their implementations: once a module with a sealed interface is compiled, no new implementations can be created.
 
@@ -1910,7 +1910,7 @@ For more detailed practical applications, see [Use case scenarios]().
 
 >✨ Java 15 introduced a similar concept, where sealed class use the `sealed` keyword along with the `permits` clause to define restricted hierarchies.
 
-###### **Declare a sealed class or interface**
+#### Declare a sealed class or interface
 
 To declare a sealed class or interface, use the `sealed` modifier:
 
@@ -1979,7 +1979,7 @@ sealed class IOError {
 }   
 ```
 
-###### **Inheritance**
+#### Inheritance
 
 Direct subclasses of sealed class and interfaces must be declared in the same package. They may be top-level or nested inside any number of other named classes, named interfaces, or named objects. Subclasses can have any visibility as long as they are compatible with normal inheritance rules in Kotlin.
 
@@ -2016,7 +2016,7 @@ If a sealed class is declared as `expect` in common source set and have `actual`
 [Learn more about the hierarchical structure of multiplatform projects.]()
 
 
-###### **Use sealed classes with when expression**
+#### Use sealed classes with when expression
 
 The key benefit of using sealed classes comes into play when you use them in a `when` expression. The `when` expression, used with a sealed class, allows use Kotlin compiler to check exhaustively that all possible cases are covered. In such cases, you don't need to add an `else` clause:
 
@@ -2040,7 +2040,7 @@ fun log(e: Error) = when (e) {
 ```
 >✨ In multiplatform project, if you have a sealed class with a `when` expression as an expected declaration in your common code, you still need an `else` branch. This is because subclasses of `actual` platform implementations may extend sealed classes that aren't known in the common code.
 
-###### **Use case scenarios**
+#### Use case scenarios
 
 Let's explore some practical scenarios where sealed classes and interfaces can be particularly useful.
 
@@ -2172,7 +2172,7 @@ fun main() {
 }
 ```
 
-#### Nested and inner classes 
+## Nested and inner classes 
 
 Classes can be nested in other classes:
 
@@ -2200,7 +2200,7 @@ class OuterClass {
 }
 ```
 
-###### **Inner classes**
+#### Inner classes
 
 A nested class marked as `inner` can access the members of its outer class. Inner classes carry a reference to an object of an outer class:
 
@@ -2216,7 +2216,7 @@ val demo = Outer().Inner().foo() // 1
 ```
 
 
-###### **Anonymous inner classes**
+#### Anonymous inner classes
 
 Anonymous inner class instances are created using an object expression:
 
@@ -2233,7 +2233,7 @@ window.addMouseListener(object : MouseAdapter() {
 >       val listener= ActionListener { println("clicked") }
 >    ```
 
-#### Enum classes
+## Enum classes
 
 The most basic use case for enum classes is the implementation of type-safe enums:
 
@@ -2255,7 +2255,7 @@ enum class Color(val rgb: Int) {
 }
 ```
 
-###### **Anonymous classes**
+#### Anonymous classes
 
 Enum constants can declare their own anonymous classes with their corresponding methods, as well as with overriding base methods.
 
@@ -2273,7 +2273,7 @@ enum class ProtocolState {
 
 If the enum class defines any members, separate the constant definitions from the member definitions with a semicolon.
 
-###### **Implementing interfaces in enum classes**
+#### Implementing interfaces in enum classes
 
 An enum class can implement an interface (but it cannot derive from a class), providing either a common implementation of interface members for all entries, or separate implementations for each entry with its anonymous class. This is done by adding the interfaces you want to implement to the enum class declaration as follows:
 
@@ -2295,7 +2295,7 @@ enum class IntArithmetics : BinaryOperator<Int>, IntBinaryOperator {
 
 All enum classes implement the Comparable interface by default. Constant in the enum class are defined in the natural order. For more information, see Ordering.
 
-###### **Working with enum constants**
+#### Working with enum constants
 
 Enum classes in Kotlin have synthetic properties and methods for listing the defined enum constants and getting an enum constant by its name. The signatures of these methods are as follows (assuming the name of the enum class is `EnumClass`):
 
@@ -2342,7 +2342,7 @@ inline fun <reified T: Enum<T>> printAllValues() {
 printAllValues<RGB>()
 ```
 
-#### Inline value classes
+## Inline value classes
 
 Sometimes it's useful to wrap a value in a class to create a more domain-specific type. However, it introduces runtime overhead due to additional heap allocations. Moreover, if the wrapped type is primitive, the performance hit is significant, because primitive types are usually heavily optimized by the runtime, while their wrappers don't get any special treatment.
 
@@ -2377,7 +2377,7 @@ val securePassword= Password("Don't try this in production")
 This is the main feature of inline classes, which inspired the name **inline**: data of the class is inlined in its usages (similar to how content of inline functions is inlined to call sites).
 
 
-###### **Members**
+#### Members
 
 Inline classes support some functionality of regular classes. In particular, they are allowed to declare properties and functions, have an `init` block and `secondary constructors`:
 
@@ -2415,7 +2415,7 @@ fun main() {
 ```
 Inline class properties cannot have backing fields. They can only have simple computable properties (no `lateinit`/ delegated properties).
 
-###### **Inheritance**
+#### Inheritance
 
 Inline classes are allowed to inherit from interfaces:
 
@@ -2436,7 +2436,7 @@ fun main() {
 ```
 It's forbidden for inline classes to participate in a class hierarchy. This means that inline classes cannot extend other classes and are always `final`.
 
-###### **Representation**
+#### Representation
 
 In generated code, the Kotlin compiler keeps a **wrapper** for each inline class. Inline class instances can be represented at runtime either as wrappers or as the underlying type. This is similar to how `Int` can be represented either as primitive `int` or as the wrapper Integer.
 
@@ -2509,7 +2509,7 @@ fun compute(x: Int){}
 fun compute(x: UInt){}
 ```
 
-###### **Inline classes vs type aliases**
+#### Inline classes vs type aliases
 
 At first sight, inline classes seem very similar to type aliases. Indeed, both seem to introduce a new type and both will be represented as the underlying type at runtime.
 
@@ -2543,7 +2543,7 @@ fun main() {
 
 ```
 
-###### **Inline classes and delegation**
+#### Inline classes and delegation
 
 Implementation by delegation to inlined value of inlined class is allowed with interfaces:
 
@@ -2568,7 +2568,7 @@ fun main() {
 
 ```
 
-#### Object declaration and expressions
+## Object declaration and expressions
 
 In Kotlin, objects allow you to define a class and create an instance of it in a single step. This is useful when you need either a reusable singleton instance or a one-time object. To handle these scenarios, Kotlin provides two key approaches: **object declarations** for creating singletons and **object expressions** for creating anonymous, one-time objects
 
@@ -2581,7 +2581,7 @@ Object declarations and object expression are best used for scenarios when:
 - **Modifying existing class behavior temporarily**: You want to modify the behavior of an existing class without the need to create new subclass. For example, adding temporary functionality to an object for a specific operation.
 - **Type-safe design is required**: You require one-time implementations of interfaces or abstract classes using object expressions. This can be useful for scenarios like a button click handler.
 
-###### **Object declarations**
+#### Object declarations
 
 You can create single instances of objects in Kotlin using object declarations, which always have a name following the `object` keyword. This allows you to define a class and create an instance of it in a single step, which is useful for implementing singletons:
 
@@ -2838,7 +2838,7 @@ fun main() {
 However, on the JVM, you can have members of companion objects generated as real static methods and fields if you use the @JvmStatic annotation. See the Java interoperability section for more detail.
 
 
-###### **Object expressions**
+#### Object expressions
 
 Object expressions declare a class and create an instance of that class, but without naming either of them. These classes are useful for one-time use. They can be created from scratch, inherit from existing classes, or implement interfaces. Instances of these classes are called anonymous objects because they are defined by an expression, not a name.
 
@@ -2995,7 +2995,7 @@ fun countClicks(window: JComponent) {
 }
 ```
 
-###### **Behavior difference between object declarations and expressions**
+#### Behavior difference between object declarations and expressions
 
 There are differences in the initialization behavior between object declarations and object expressions:
 
@@ -3003,7 +3003,7 @@ There are differences in the initialization behavior between object declarations
 - Object declarations are initialized `lazily`, when accessed for the first time.
 - A companion object is initialized when the corresponding class is loaded (resolved) that matches the semantics of a Java static initializer.
 
-#### Overriding methods
+## Overriding methods
 
 Kotlin requires explicit modifiers for overridable members and overrides: 
 
@@ -3031,7 +3031,7 @@ open class  Rectangle(): Shape() {
     final override fun draw(){}
 }
 ```
-#### Overriding properties
+## Overriding properties
 
 The overriding mechanism works on properties in the same way that it does on methods. Properties declared on a superclass that are then redeclared on a derived class must be prefaced with `override`, and must have a compatible type. Each declared property can be overridden by a property with an initializer or by a property with a `get` method.: 
 
@@ -3059,7 +3059,7 @@ class Polygon : Shape {
 }
 ```
 
-#### Derived class initialization order
+## Derived class initialization order
 
 During the construction of a new instance of a derived class, the base class initialization is done as the first step (preceded only by evaluation of the arguments for the base class constructor), which means that it happens before the initialization logic of the derived class is run.
 
@@ -3096,7 +3096,7 @@ class Derived ( name: String, val lastName: String,): Base( name.replaceFirstCha
 ```
 This means that when the bass class constructor is executed, the properties declared or overridden in the derived class have not yet been initialized. Using any of those properties in the base class initialization logic (either directly or indirectly through another overridden `open` member implementation) may lead to incorrect behavior or a runtime failure. When designing a base class, you should therefore avoid using `open` members in ths constructors, property initializers, or `init` blocks.
 
-#### Calling the superclass implementation
+## Calling the superclass implementation
 
 Code in a derived class can call its superclass functions and property accessor implementations using the `super` keyword:
 
@@ -3143,7 +3143,7 @@ class FilledRectangle: Rectangle() {
 /// Drawn a filled rectangle with color black
 ```
 
-#### Overriding rules
+## Overriding rules
 
 In Kotlin, implementation inheritance regulated by the following rule: If a class inherits multiple implementations of the same member from its immediate superclasses, it must override this member and provide its own implementation (perhaps, using one of the inherited ones).
 
@@ -3171,7 +3171,7 @@ class Square : Rectangle(), Polygon {
 ```
 It's fine to inherit from both `Rectangle` and `Polygon`, but both of them have their implementations of `draw()`, so you need to override `draw()` in `Square` and provide a separate implementation  for it to eliminate the ambiguity.
 
-#### Functional (SAM) interfaces
+## Functional (SAM) interfaces
 
 An interface with only one abstract member function is called a **functional interface**, or a **Single Abstract Method (SAM) interface**. The functional interface can have several non-abstract member functions but only one abstract member function.
 
@@ -3183,7 +3183,7 @@ fun interface KRunnable {
 }
 ```
 
-###### **SAM conversions**
+#### SAM conversions
 
 For functional interfaces, you can use SAM conversions that help make your code more concise and readable by using lambda expressions.
 
@@ -3227,7 +3227,7 @@ fun main() {
 /// Is 7 even? - false
 ```
 
-###### **Migration from an interface with constructor function to a functional interface**
+#### Migration from an interface with constructor function to a functional interface
 
 Starting from 1.6.20, Kotlin supports callable references to functional interface constructors, which adds a source-compatible way to migrate from an interface with a constructor function to a functional interface. Consider the following code:
 
@@ -3260,7 +3260,7 @@ Preserve the binary compatibility by marking the legacy function `Printer` with 
 @Deprecated(message = "Your message about the deprecation", level = DeprecationLevel.HIDDEN)
 fun Printer (...) {...}
 ```
-###### **Functional interfaces vs. type aliases**
+#### Functional interfaces vs. type aliases
 
 You can also simply rewrite the above using a type alias for a functional type:
 
@@ -3282,7 +3282,7 @@ Functional interfaces are more flexible and provide more capabilities than type 
 - If your API needs to accept a function(any function) with some specific parameters and return types - use a simple functional type or define a type alias to give a shorter name to the corresponding functional type. 
 - If your API accepts a more complex entity than a function - for example, it has non-trivial contracts and/or operations on it that cannot be expressed in a functional type's signature - declare a separate functional interface for it. 
 
-## Visibility modifiers
+# Visibility modifiers
 
 Classes, objects, interfaces, constructors, and functions, as well as properties and their setters, can have **visibility modifiers**. Getters always have the same visibility as their properties.
 
@@ -3291,7 +3291,7 @@ The default visibility is `public`.
 
 We will learn how the modifiers apply to different types of declaring scopes.
 
-#### Packages
+## Packages
 
 Functions, properties, classes, objects, and interfaces can be declared at the "top-level" directly inside a package:
 
@@ -3323,7 +3323,7 @@ public var bar: Int = 5 // property is visible everywhere
 internal val baz: Int = 6 // Visible inside the same module.
 ```
 
-#### Class member
+## Class member
 
 For members declared inside a class:
 
@@ -3365,7 +3365,7 @@ class Unrelated (o: Outer) {
 }
 ```
 
-###### **Constructors**
+#### Constructors
 
 Use the following syntax to specify the visibility of the primary constructor of a class:
 
@@ -3378,11 +3378,11 @@ Here the constructor is `private`. By default, all constructors are `public`, wh
 
 For sealed classes, constructors are `protected` by default.
 
-###### **Local declarations**
+#### Local declarations
 
 Local variables, functions, and classes cannot have visibility modifiers.
 
-#### Modules
+## Modules
 
 The `internal` visibility modifier means that the member is visible within the same module. More specifically, a module is a set of Kotlin files compiled together, for example:
 
@@ -3394,7 +3394,7 @@ The `internal` visibility modifier means that the member is visible within the s
 
 
 
-## Null safety
+# Null safety
 
 In Kotlin, it's possible to have a `null` value. Kotlin use `null` values when something is missing or not yet set. You've already seen an example of Kotlin returning a null value in the Collections chapter when you tried to access a key-value pair with a key that does not exist in the map. Although it's useful to use `null` values in this way, you might run into problems if your code isn't prepared to handle them.
 
@@ -3410,7 +3410,7 @@ Null safety is combination of features that allow you to:
 
 - Declare actions to take if `null` values are detected.
 
-#### Nullable types
+## Nullable types
 
 Kotlin supports nullable types which allows the possibility for the declared type to have `null` values. By default, a type is **not** allowed to accept `null` values. Nullable types are declared by explicitly adding `?` after the type declaration.
 
@@ -3447,7 +3447,7 @@ fun main() {
 }
 ```
 
-#### Check for null values
+## Check for null values
 
 You can check for the presence of `null` values within conditional expressions. In the following example, the `describeString()` function has an `if` statement that check whether `maybeString` is **not** `null` and if its `length` is greater than zero:
 
@@ -3466,7 +3466,7 @@ fun main() {
 }
 ```
 
-#### Use safe calls
+## Use safe calls
 
 To safely access properties of an object that might contain a `null` value, use the safe call operator `?.`. The safe call operator returns `null` if either the object or one of its accessed properties is `null`. This is useful if you want to avoid the presence of `null` values triggering errors in your code. 
 
@@ -3498,7 +3498,7 @@ fun main() {
 }
 ```
 
-#### Use Elvis operator
+## Use Elvis operator
 
 You can provide a default value to return if a `null` value is detected by using the **Elvis operator** `?:`.
 
@@ -3515,13 +3515,13 @@ fun main() {
 ```
 
 
-## Extensions
+# Extensions
 
 Kotlin provides the ability to extend a class or an interface with new functionality without have to inherit from the class or use design patterns such as **Decorator**. This is done via a special declarations called **extensions**.
 
 For example, you can write new functions for a class or an interface from a third-party library that you can't modify. Such functions can be called in usual way, as if they were methods of the original class. This mechanism is called an **extension function**. There are also **extension properties** that let you define new properties for existing classes.
 
-#### Extension functions
+## Extension functions
 
 To declare an extension function, prefix its name with a **receiver type**, which refers to the type being extended. The following adds a `swap` function to `MutableList<Int>`:
 
@@ -3550,7 +3550,7 @@ fun <T> MutableList<T>.swap(index1: Int, index2: Int) {
 ```
 You need to declare the generic type parameter before the function name to make it available in the receiver type expression. For more information about generics, see [generic functions]()
 
-#### Extensions are resolved statically
+## Extensions are resolved statically
 
 Extensions do not actually modify the classes they extend. By defining an extension, you are not inserting new members into a class, only making new functions callable with the dot-notation on variables of the this type.
 
@@ -3608,7 +3608,7 @@ Example().printFunctionType(1)
 /// Extension function: #1
 ```
 
-#### Nullable receiver
+## Nullable receiver
 
 Note that extensions can be defined with a nullable receiver type. These extensions can be called on an object variable even if its value is null. If the receiver type is `null`, then `this` is also `null`. So when defining an extension with a nullable receiver type, we recommend performing a `this == null` check inside the function body to avoid compiler errors.
 
@@ -3622,7 +3622,7 @@ fun Any?.toString(): String {
 }
 ```
 
-#### Extension properties
+## Extension properties
 
 Kotlin supports extension properties much like it supports functions:
 
@@ -3639,7 +3639,7 @@ Example:
 val House.number = 1 // Error: Initializers are not allowed for extension properties.
 ```
 
-#### Companion object extensions
+## Companion object extensions
 
 If a class has a companion object defined, you can also define extension functions and properties for the companion object. Just like regular members of the companion object, they can be called using only the class name as the qualifier:
 
@@ -3659,7 +3659,7 @@ fun main() {
 /// companion
 ```
 
-#### Scope of extensions
+## Scope of extensions
 
 In most cases, you define extensions on the top level, directly under packages:
 
@@ -3684,7 +3684,7 @@ fun main() {
 
 See [imports]() for more information.
 
-#### Declaring extensions as members
+## Declaring extensions as members
 
 You can declare extension for one class inside another class. Inside such an extension, there are multiple implicit receivers - objects whose members can be accessed without a qualifier. An instance of a class in which the extension is declared is called a **dispatch receiver**, and an instance of the receiver type of the extension method is called an **extension receiver**.
 
@@ -3767,14 +3767,14 @@ fun main() {
 }
 ```
 
-#### Note on visibility
+## Note on visibility
 
 Extensions utilize the same visibility modifiers as regular functions declared in same scope would. For example:
 
 - An extension declared at the top level of a file has access to the other `private` top-level declarations in the same file.
 - If an extension is declared outside its receiver type, it cannot access the receiver's `private` or `protected` members.
 
-## Delegation
+# Delegation
 
 The Delegation pattern has proven to be a good alternative to implementation inheritance, and Kotlin support it natively requiring zero boilerplate code.
 
@@ -3798,7 +3798,7 @@ fun main() {
 ```
 The by-clause in the supertype list for `Derived` indicates that `b` will be stored internally in objects of `Derived` and the compiler will generate all the methods of `Base` that forward to `b`.
 
-#### Overriding a member of an interface implemented by delegation
+## Overriding a member of an interface implemented by delegation
 
 Overrides work as you expect: the compiler will use your override implementations instead of those in the delegate object. If you want to add `override fun printMessage() { print("abc") }` to `Derived`, the program would print `abc` instead of `10` when `printMessage` is called:
 
@@ -3853,7 +3853,7 @@ fun main() {
 /// Message of Derived
 ```
 
-## Delegated properties
+# Delegated properties
 
 With some common kinds of properties, even though you can implement them manually every time you need them, it is more helpful to implement them once, add them to a library, and reuse them later. For example:
 - `Lazy` properties: the value is computed only on first access.
@@ -3904,12 +3904,12 @@ The specification of the requirements for the delegated object can be found belo
 
 You can declare a delegated property inside a function or code block; it doesn't have to be a member of a class. Below you can find an example.
 
-#### Standard delegates
+## Standard delegates
 
 The Kotlin standard library provides factory methods for several useful kinds of delegates.
 
 
-###### **Lazy properties**
+#### Lazy properties
 
 `lazy()` is  a function that takes a lambda and returns an instance of `Lazy<T>`, which can serve as a delegate for implementing a lazy property. The first call to `get()` executes the lambda passed to `lazy()` and remembers the result. Subsequent calls to `get()` simply return the remembered result/
 
@@ -3932,7 +3932,7 @@ By default, the evaluation of lazy properties is **synchronized**: the value is 
 
 If you're sure that the initialization will always happen in the same thread as the one where you use the property, you can use `LazyThreadSafetyMode.NONE`. It doesn't incur any thread-safety guarantees and related overhead.
 
-###### **Observable properties**
+#### Observable properties
 
 `Delegates.observable()` takes two arguments: the initial value and a handle for modifications
 
@@ -3960,7 +3960,7 @@ fun main() {
 If you want to intercept assignments and `veto` them, use `vetoable()` instead of `observable()`. The handler passed to `vetoable` will be called `before` the assignment of a new property value.
 
 
-#### Delegating to another property
+## Delegating to another property
 
 A property can delegate its getter and setter to another property. Such delegation is available for both top-level and class properties (member and extension). This delegate property can be:
 - A top-level property
@@ -4001,7 +4001,7 @@ fun main() {
 
 ```
 
-#### Storing properties in a map
+## Storing properties in a map
 
 One common use case is storing the values of properties in a map. This comes up often in applications for things like parsing JSON or performing other dynamic tasks. In this case, you can use the map instance itself as the delegate for a delegated property.
 
@@ -4034,7 +4034,7 @@ class MutableUser(val map: MutableMap<String, Any?>) {
 }
 ```
 
-#### Local delegated properties
+## Local delegated properties
 
 You can declare local variables as delegated properties. For example, you can make a local variable lazy:
 
@@ -4050,7 +4050,7 @@ fun example(computeFoo: () -> Foo){
 
 The `memoziedFoo` variable will be computed on first access only. If `someCondition` fail, the variable won't be computed at all.
 
-#### Property delegate requirements
+## Property delegate requirements
 
 For a **read-only` property (`val`), a delegate should provide an operator function `getValue()` with the following parameters:
 
@@ -4125,7 +4125,7 @@ val readOnlyResource: Resource by resourceDelegate()  // ReadWriteProperty as va
 var readWriteResource: Resource by resourceDelegate()
 ```
 
-#### Translation rules for delegated properties
+## Translation rules for delegated properties
 
 
 Under the hood, the Kotlin compiler generates auxiliary properties for some kinds of delegated properties and then delegates to them.
@@ -4154,7 +4154,7 @@ The Kotlin compiler provides all the necessary information about `prop` in the a
 
 
 
-###### **Optimized cases for delegated properties**
+#### Optimized cases for delegated properties
 
 The `$delegate` field will be omitted if a delegate is:
 
@@ -4195,7 +4195,7 @@ The `$delegate` field will be omitted if a delegate is:
   ```
   
 
-###### **Translation rules when delegating to another property**
+#### Translation rules when delegating to another property
 
 When delegating to another property, the Kotlin compiler generates immediate access to referenced property. This means that the compiler doesn't generate the field `prop$delegate`. This optimization helps save memory.
 
@@ -4225,7 +4225,7 @@ class C<Type> {
 }
 ```
 
-#### Providing a delegate
+## Providing a delegate
 
 By defining the `provideDelegate` operator, you can extend the logic for creating the object to which the property implementation is delegated. If the object used on the right-hand side of `by` defines `provideDelegate` as a member or extension function, that function will be called to create the property delegate instance.
 
@@ -4314,7 +4314,7 @@ val provider = PropertyDelegateProvider { thisRef: Any?, property ->
 val delegate: Int by provider
 ```
 
-## Type aliases 
+# Type aliases 
 
 Type aliases provide alternative names for existing types. If the type name too long you can introduce a different shorter name and use the new one instead.
 
@@ -4370,11 +4370,11 @@ fun main() {
 ```
 
 
-## Idioms
+# Idioms
 
 A collection of random and frequently used idioms in Kotlin.
 
-#### Create DTOs (POJOs/POCOs)
+## Create DTOs (POJOs/POCOs)
 
 ```kotlin
 data class Customer( val name: String, val email: String)
@@ -4389,13 +4389,13 @@ provides a `Customer` class with the following functionality:
 - `copy()`
 - `component1()`, `component2()`,..., for all properties
 
-#### Default values for function parameters
+## Default values for function parameters
 
 ```kotlin
 fun foo(a: Int =0, b: String = ""){}
 ```
 
-#### Filter a list
+## Filter a list
 
 ```kotlin
 val positives = list.filter {x: Int -> x > 0}
@@ -4406,19 +4406,19 @@ Or alternatively, even shoter:
 val positives = list.filter {it > 0}
 ```
 
-#### Check the presence of an element in a collection
+## Check the presence of an element in a collection
 
 ```kotlin
 if ("john@example.com" in emailList){}
 ```
 
-#### String interpolation
+## String interpolation
 
 ```kotlin
 println("Name $name")
 ```
 
-#### Read standard input safely
+## Read standard input safely
 
 ```kotlin
 // Reads a string and returns null if the input can't be converted into an integer. For example: Hi there!
@@ -4432,7 +4432,7 @@ println(correctInt)
 // 13
 ```
 
-#### Instance checks
+## Instance checks
 
 ```kotlin
 when(x) {
@@ -4442,13 +4442,13 @@ when(x) {
 }
 ```
 
-#### Read-only list
+## Read-only list
 
 ```kotlin
 val list = listOf("a", "b", "c")
 ```
 
-#### Read-only map
+## Read-only map
 
 
 ```kotlin
@@ -4456,7 +4456,7 @@ val map = mapOf("a" to 1, "b" to 2, "c" to 3)
 ```
 
 
-#### Access a map entry
+## Access a map entry
 
 ```kotlin
 println(map["key"])
@@ -4464,7 +4464,7 @@ println(map["key"])
 map["key"]= value
 ```
 
-#### Traverse a map or a list of pairs
+## Traverse a map or a list of pairs
 
 ```kotlin
 for ((k,v) in map) {
@@ -4472,7 +4472,7 @@ for ((k,v) in map) {
 }
 ```
 
-#### Iterate over a range
+## Iterate over a range
 
 ```kotlin
 for (i in 1..100) {} // closed-ended range: includes 100
@@ -4482,7 +4482,7 @@ for (i in 100 downTo 1) // 100, 99, ... 1
 (1..10).forEach {}
 ```
 
-#### Lazy property
+## Lazy property
 
 
 ```kotlin
@@ -4492,7 +4492,7 @@ val p: String by lazy {
 }
 ```
 
-#### Extension functions 
+## Extension functions 
 
 
 ```kotlin
@@ -4501,7 +4501,7 @@ fun String.spaceToCamelCase() {}
 "Convert this to camelcase".spaceToCamelCase()
 ```
 
-#### Create a singleton
+## Create a singleton
 
 
 ```kotlin
@@ -4510,7 +4510,7 @@ object Resource {
 }
 ```
 
-#### Use inline value classes for type-safe values
+## Use inline value classes for type-safe values
 
 ```kotlin
 @JvmInline
@@ -4524,7 +4524,7 @@ If you accidentally mix up `EmployeeId` and `CustomerId`, a compilation error is
 
 >✨ The `@JvmInline` annotation is only needed for JVM backends.
 
-#### Instantiate an abstract class
+## Instantiate an abstract class
 
 ```kotlin
 abstract class MyAbstractClass {
@@ -4546,7 +4546,7 @@ fun main() {
 }
 ```
 
-#### If-not-null shorthand
+## If-not-null shorthand
 
 ```kotlin
 val files = File("Test").listFiles()
@@ -4555,7 +4555,7 @@ println(files?.size) // size is printed if files is not null
 ```
 
 
-#### If-not-null-else shorthand
+## If-not-null-else shorthand
 
 ```kotlin
 val files = File("Test").listFiles()
@@ -4574,7 +4574,7 @@ println(filesSize)
 
 ```
 
-#### Execute a statement if null
+## Execute a statement if null
 
 ```kotlin
 
@@ -4582,14 +4582,14 @@ val values = ...
 val email = values["email"] ?: throw IllegalStateException("Email is missing!")
 ```
 
-#### Get first item of a possibly empty collection
+## Get first item of a possibly empty collection
 
 ```kotlin
 val emails= ...
 val mainEmail = emails.firstOrNull() ?: ""
 ```
 
-#### Execute if not null 
+## Execute if not null 
 
 ```kotlin
 val value: String? =null 
@@ -4599,7 +4599,7 @@ value?.let{
 }
 ```
 
-#### Map nullable value if not null
+## Map nullable value if not null
 
 ```kotlin
 val value = ...
@@ -4608,7 +4608,7 @@ val mapped = value?.let{
     transformValut(it)
 } ?: defaultValue
 ```
-#### Return on when statement
+## Return on when statement
 
 ```kotlin
 fun transform(color: String): Int {
@@ -4621,7 +4621,7 @@ fun transform(color: String): Int {
 }
 ```
 
-#### try-catch expression
+## try-catch expression
 
 ```kotlin
 import java.lang.ArithmeticException
@@ -4636,7 +4636,7 @@ fun test() {
 }
 ```
 
-#### if expression
+## if expression
 
 ```kotlin
 val result: String = if (x == 1){
@@ -4648,7 +4648,7 @@ val result: String = if (x == 1){
 }
 ```
 
-#### Builder-style usage of methods that return Unit
+## Builder-style usage of methods that return Unit
 
 ```kotlin
 fun arrayOfMinusOnes(size: Int): IntArray {
@@ -4656,7 +4656,7 @@ fun arrayOfMinusOnes(size: Int): IntArray {
 }
 ```
 
-#### Single-expression functions
+## Single-expression functions
 
 ```kotlin
 fun theAnswer() = 42
@@ -4680,7 +4680,7 @@ fun transform(color: String): Int = when (color) {
 }
 ```
 
-#### Call multiple methods on an object instance (with)
+## Call multiple methods on an object instance (with)
 
 ```kotlin
 class Turtle {
@@ -4701,7 +4701,7 @@ with(myTurtle) { //draw a 100 pix square
 }
 ```
 
-#### Configure properties of an object (apply)
+## Configure properties of an object (apply)
 
 ```kotlin
 val myRectangle = Rectangle().apply {
@@ -4712,7 +4712,7 @@ val myRectangle = Rectangle().apply {
 ```
 This is useful for configuring properties that aren't present in the object constructor.
 
-#### Java 7's try-with-resources
+## Java 7's try-with-resources
 
 
 ```kotlin
@@ -4722,7 +4722,7 @@ stream.buffered().reader().use { reader ->
 }
 ```
 
-#### Generic function that requires the generic type information
+## Generic function that requires the generic type information
 
 ```kotlin
 //  public final class Gson {
@@ -4732,14 +4732,14 @@ stream.buffered().reader().use { reader ->
 
 inline fun <reified T: Any> Gson.fromJson(json: JsonElement): T = this.fromJson(json, T::class.java)
 ```
-#### Swap two variables
+## Swap two variables
 
 ```kotlin
 var a = 1
 var b = 2
 a = b.also { b = a }
 ```
-#### Mark code as incomplete (TODO)
+## Mark code as incomplete (TODO)
 
 Kotlin's standard library has a `TODO()` function that will always throw a `NotImplementedError`. Its return type is `Nothing` so it can be used regardless of expected type. There's also an overload that accepts a reason parameter:
 
@@ -4749,7 +4749,7 @@ fun calcTaxes(): BigDecimal = TODO("Waiting for feedback from accounting")
 
 IntelliJ IDEA's kotlin plugin understands the semantics of TODO() and automatically adds a code pointer in the TODO tool window.
 
-## Packages and imports
+# Packages and imports
 
 A source file may start with a package declaration.
 
@@ -4767,7 +4767,7 @@ All the contents, such as classes and functions, of the source file are included
 
 If the package is not specified, the contents of such a file belong to the `default` package with no name.
 
-#### Default imports 
+## Default imports 
 
 A number of packages are imported into every Kotlin file by default:
 
@@ -4788,7 +4788,7 @@ Additional packages are imported depending on the target platform:
 - JS:
   - kotlin.js.*
 
-#### Imports
+## Imports
 
 Apart from the default imports, each file may contain its own `import` directives.
 
@@ -4816,12 +4816,12 @@ The `import` keyword is not restricted to importing classes, you can also use it
 - functions and properties declared in [object declarations]()
 - [enum constants]()
 
-#### Visibility of top-level declarations
+## Visibility of top-level declarations
 
 If a top-level declaration is marked `private`, it's private to the file it's declared in, see [Visibility modifiers]() 
 
 
-## Generics: in, out, where
+# Generics: in, out, where
 
 Classes in Kotlin can have type parameters, just like Java:
 
@@ -4841,11 +4841,11 @@ But if the type parameters can be inferred, for example, from the constructor ar
 ```kotlin
 val box = Box(1) // 1 has type Int,  so the compiler figures out that it is Box<Int>
 ```
-#### Variance
+## Variance
 
 One of the trickiest aspects of Java's type system is the wildcard types (see Java Generics FAQ). Kotlin doesn't have these. Instead, Kotlin has declaration-site variance and type projections.
 
-###### **Variance and wildcards in Java**
+#### Variance and wildcards in Java
 
 Let's think about why Java needs these mysterious wildcards. First, generic types in Java is invariant, meaning that `List<String>` is **not** a subtype of `List<Object>`. If `List` were not invariant, it would have been no better than Java`s arrays, as the following code would have complied but causes an exception at runtime:
 
@@ -4906,7 +4906,7 @@ He then proposes the following mnemonic: `PECS` stands for `Producer-Extends`, `
 >The only thing guaranteed by wildcards (or other types of variance) is type safety. Immutability is a completely different story.
 
 
-###### **Declaration-side variance**
+#### Declaration-side variance
 
 Let's suppose that there is a generic interface `Source<T>` that does not have any methods that take `T` as a parameter, only methods that return `T`:
 
@@ -4964,9 +4964,9 @@ fun demo(x: Comparable<Number>) {
 The words **in** and **out** seem to be self-explanatory(as they've already been used successfully in C# for quite some time), so the mnemonic above is not really needed. It can in fact be rephrased at a higher level of abstraction. 
 
 
-#### Type projections
+## Type projections
 
-###### **Use-site variance: type projections**
+#### Use-site variance: type projections
 
 It's very easy to declare a type parameter `T` as `out` and avoid trouble with subtyping on the use site, but some classes **can't** actually be restricted to only return `T`'s! A good example of this is `Array`:
 
@@ -5019,7 +5019,7 @@ fun fill(dest: Array<in String>, value: String){}
 
 `Array<in String>` corresponds to Java's `Array<? super String>` This means that you can pass an array of `CharSequence` or an array of `Object` to the `fill()` function.
 
-###### **Star-projections**
+#### Star-projections
 
 Sometimes you want to say that you know nothing about the type argument, but you still want to use it in a safe way. The safe way here is to define such a projection of the generic type, that every concrete instantiation of that generic type will be a subtype of that projection.
 
@@ -5037,7 +5037,7 @@ If a generic type has several type parameters, each of them can be projected ind
 >✨ Star-projections are very much like Java's raw types, but safe.
 
 
-#### Generic functions
+## Generic functions
 
 Class aren't the only declarations that can have type parameters. Functions can, too. Type parameters are placed before the name of the function:
 
@@ -5062,11 +5062,11 @@ val l = singletonList(1)
 ```
 
 
-#### Generic constrains
+## Generic constrains
 
 The set of all possible types that can be substituted for a given type parameter may be restricted by **generic constrains**.
 
-###### **Upper bounds**
+#### Upper bounds
 
 The most common type of constraint is an **upper bound**, which corresponds  to Java's `extends` keyword:
 
@@ -5096,7 +5096,7 @@ fun <T> copyWhenGreater(list: List<T>, threshold: T): List<String>
 
 The passes type must satisfy all conditions of the `where` clause simultaneously. In the above example, the `T` type must implement both `CharSequence` and `Comparable`.
 
-#### Definitely non-nullable types
+## Definitely non-nullable types
 
 To make interoperability with generic Java classes and interface easier, Kotlin supports declaring a generic type parameter as **definitely non-nullable**.
 
@@ -5125,11 +5125,11 @@ interface ArcadeGame<T1> : Game<T1>{
 ```
 When working only with Kotlin, it's unlikely that you will need to declare definitely non-nullable types explicitly because Kotlin's type inference takes care of this for you.
 
-#### Type erasure
+## Type erasure
 
 The type safety checks that Kotlin performs for generic declaration usages are done at compile time. At runtime, the instances of generic types do not hold any information about their actual type arguments. The type information is said to be **erased**. For example, the instances of `Foo<Bar>` and `Foo<Baz?>` are erased to just `Foo<*>`.
 
-###### **Generics type checks and casts**
+#### Generics type checks and casts
 
 Due to the type erasure, there is no general way to check whether an instance of a generic type was created with certain type arguments at runtime, and the compiler prohibits such `is`- checks such as `ints is List<Int>` or `list is T` (type parameter). However, you can check an instance against a star-projected type:
 
@@ -5174,7 +5174,7 @@ val stringToStringList = somePair.asPairOf<String, List<String>>() // Compiles b
 
 ```
 
-###### **Unchecked casts**
+#### Unchecked casts
 
 Type casts to generic types with concrete type arguments such as foo as `List<String>` cannot be checked at runtime.
 These unchecked casts can be used when type safety is implied by the high-level program logic but cannot be inferred directly by the compiler. See the example below.
@@ -5207,7 +5207,7 @@ inline fun <reified T> List<*>.asListOfType(): List<T>? =
 ```
 >✨On the JVM: array types (`Array<Foo>`) retain information about the erased type of their elements, and type casts to an array type are partially checked: the nullability and actual type arguments of the element type are still erased. For example, the cast `foo as Array<List<String>?>` will succeed if `foo` is an array holding any `List<*>`, whether it is nullable or not.
 
-#### Underscore operator for type arguments
+## Underscore operator for type arguments
 
 The underscore operator `_` can be used for type arguments. Use it to automatically infer a type of the argument when other types are explicitly specified:
 
@@ -5242,7 +5242,7 @@ fun main(){
 ```
 
 
-## Kotlin for Android
+# Kotlin for Android
 
 You can benefit from:
 
