@@ -41,17 +41,22 @@
 
 - [Early returns in functions](#early-returns-in-functions)
 
-- [Lambda expressions](#lambda-expressions):
+- [Function types](#function-types)
 
-  - [Pass to another function](#pass-to-another-function)
-
-  - [Function types](#functions-without-return-)
-
-  - [Return from a function](#return-from-a-function)
+- [Lambdas](#lambdas):
+  - [Higher-order functions and lambdas](#higher-order-functions-and-lambdas)
   
-  - [Invoke separately](#invoke-separately)
+  - [Lambda expressions](#lambda-expressions):
 
-  - [Trailing lambdas](#trailing-lambdas)
+    - [Pass to another function](#pass-to-another-function)
+
+    - [Return from a function](#return-from-a-function)
+
+    - [Invoke separately](#invoke-separately)
+
+    - [Trailing lambdas](#trailing-lambdas)
+
+
 - [Inline functions](#inline-functions):
   - [noinline](#noinline)
   - [Non-local returns](#non-local-returns)
@@ -820,7 +825,43 @@ fun main(){
 }
 ```
 
-## Lambda expressions
+## Function types
+
+Before you can return a lambda expression from a function, you first need to understand **function types**.
+
+You have already learned about basic types but functions themselves also have a type. Kotlin's type inference can infer a function's type from the parameter type. But there may be times when you need to explicitly specify the function type. The compiler needs the function type so that it knows what is and isn't allowed for that function.
+
+The syntax for a function type has:
+
+- Each parameter's type written within parentheses `()` and separated by commas `,`.
+- The return type written after `->`.
+
+For example: `(String) -> String` or `(Int, Int) -> Int`.
+
+This is what a lambda expression looks like if a function type for `upperCaseString()` is defined:
+
+```kotlin
+val upperCaseString: (String) -> String = { text -> text.uppercase()}
+
+fun main() {
+    println(upperCaseString("hello")) // HELLO
+}
+```
+if your lambda expression has no parameter then the parentheses `()` are left empty. For example: `() -> Unit`
+
+>✨You must declare parameter and return types either in the lambda expression or as a function type. Otherwise, the compiler won't be able to know what type your lambda expression is.
+>For example, the following won't work:
+>   ```kotlin
+>   val upperCaseString = { str -> str.uppercase() }
+>   ```
+
+
+## Lambdas
+
+#### Higher-order functions and lambdas
+
+
+#### Lambda expressions
 
 Kotlin allows you to write even more concise code for functions by using lambda expressions.
 
@@ -873,7 +914,7 @@ Lambda expressions can be used in a number of ways. You can:
 - Return a lambda expression from a function
 - Invoke a lambda expression on its own
 
-#### Pass to another function
+###### **Pass to another function**
 
 A great example of when it's useful to pass a lambda expression to a function, is using the `.filter()` function on collections:
 
@@ -927,37 +968,7 @@ The `.map()` function accepts a lambda expression as a transform function:
 
 - `{ x -> x * 3 }` takes each element of the list and returns that element multiplied by 3.
 
-#### Function types
-
-Before you can return a lambda expression from a function, you first need to understand **function types**.
-
-You have already learned about basic types but functions themselves also have a type. Kotlin's type inference can infer a function's type from the parameter type. But there may be times when you need to explicitly specify the function type. The compiler needs the function type so that it knows what is and isn't allowed for that function.
-
-The syntax for a function type has:
-
-- Each parameter's type written within parentheses `()` and separated by commas `,`.
-- The return type written after `->`.
-
-For example: `(String) -> String` or `(Int, Int) -> Int`.
-
-This is what a lambda expression looks like if a function type for `upperCaseString()` is defined:
-
-```kotlin
-val upperCaseString: (String) -> String = { text -> text.uppercase()}
-
-fun main() {
-    println(upperCaseString("hello")) // HELLO
-}
-```
-if your lambda expression has no parameter then the parentheses `()` are left empty. For example: `() -> Unit`
-
->✨You must declare parameter and return types either in the lambda expression or as a function type. Otherwise, the compiler won't be able to know what type your lambda expression is.
->For example, the following won't work:
->   ```kotlin
->   val upperCaseString = { str -> str.uppercase() }
->   ```
-
-###### **Return from a function**
+#### Return from a function
 
 Lambda expressions can be returned from a function. So that the compiler understands what type the lambda expression returned is, you must declare a function type.
 
