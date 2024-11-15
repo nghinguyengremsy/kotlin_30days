@@ -41,12 +41,15 @@
 
 - [Early returns in functions](#early-returns-in-functions)
 
-- [Function types](#function-types)
 
 - [Lambdas](#lambdas):
   - [Higher-order functions and lambdas](#higher-order-functions-and-lambdas)
   
-  - [Lambda expressions](#lambda-expressions):
+  - [Higher-order functions](#higher-order-functions)
+  
+  - [Function types](#function-types)
+  
+  - [Lambda expressions and anonymous functions](#lambda-expressions-and-anonymous-functions):
 
     - [Pass to another function](#pass-to-another-function)
 
@@ -825,7 +828,14 @@ fun main(){
 }
 ```
 
-## Function types
+
+## Lambdas
+
+#### Higher-order functions and lambdas
+
+#### Higher-order functions
+
+#### Function types
 
 Before you can return a lambda expression from a function, you first need to understand **function types**.
 
@@ -856,12 +866,8 @@ if your lambda expression has no parameter then the parentheses `()` are left em
 >   ```
 
 
-## Lambdas
 
-#### Higher-order functions and lambdas
-
-
-#### Lambda expressions
+#### Lambda expressions and anonymous functions
 
 Kotlin allows you to write even more concise code for functions by using lambda expressions.
 
