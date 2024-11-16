@@ -41,6 +41,9 @@
 
 - [Early returns in functions](#early-returns-in-functions)
 
+- [Variable number of arguments (varargs)](#variable-number-of-arguments-varargs)
+
+- [Infix notation](#infix-notation)
 
 - [Lambdas](#lambdas):
   - [Higher-order functions and lambdas](#higher-order-functions-and-lambdas)
@@ -838,6 +841,82 @@ fun main(){
 }
 ```
 
+## Variable number of arguments (varargs)
+
+You can mark a parameter of a function (usually the last one) with the `vararg` modifier:
+
+```kotlin
+fun <T> asList(vararg ts: T): List<T> {
+    val result = ArrayList<T>()
+    for (t in ts) // ts is an Array
+        result.add(t)
+    return result
+}
+```
+
+In this case, you can pass a variable number of arguments to the function:
+
+```kotlin
+val list = asList(1, 2, 3)
+```
+
+Inside a function, a `vararg`-parameter of type `T` is visible as an array of `T`, as in the example above, where the ts variable has type `Array<out T>`.
+
+Only one parameter can be marked as `vararg`. If a `vararg` parameter is not the last one in the list, values for the subsequent parameters can be passed using named argument syntax, or, if the parameter has a function type, by passing a lambda outside the parentheses.
+
+When you call a `vararg`-function, you can pass arguments individually, for example `asList(1, 2, 3)`. If you already have an array and want to pass its contents to the function, use the **spread** operator (prefix the array with `*`):
+
+
+```kotlin
+val a = arrayOf(1, 2, 3)
+val list = asList(-1, 0, *a, 4)
+```
+
+If you want to pass a primitive type array into `vararg`, you need to convert it to a regular (typed) array using the `toTypedArray()` function:
+
+```kotlin
+val a = intArrayOf(1, 2, 3) // IntArray is a primitive type array
+val list = asList(-1, 0, *a.toTypedArray(), 4)
+```
+
+
+## Infix notation
+
+Functions marked with the `infix` keyword can also be called using the infix notation (omitting the dot and the parentheses for the call). Infix functions must meet the following requirements:
+- They must be member functions or extension functions.
+- They must have a single parameter.
+- The parameter must not accept variable number of arguments and must have no default value.
+
+```kotlin
+infix fun Int.shl(x: Int): Int { ... }
+
+// calling the function using the infix notation
+1 shl 2
+
+// is the same as
+1.shl(2)
+```
+>✨Infix function calls have lower precedence than arithmetic operators, type casts, and the `rangeTo` operator. The following expressions are equivalent:
+>   - `1 shl 2 + 3` is equivalent to `1 shl (2 + 3)`
+>   - `0 until n * 2` is equivalent to `0 until (n * 2)`
+>   - `xs union ys as Set<*>` is equivalent to `xs union (ys as Set<*>)`
+> On the other hand, an infix function call's precedence is higher than that of the boolean operators `&&` and `||`, `is` - and in-checks, and some other operators. These expressions are equivalent as well:
+>   - `a && b xor c` is equivalent to `a && (b xor c)`
+>   - `a xor b in c` is equivalent to `(a xor b) in c`
+
+Note that infix functions always require both the receiver and the parameter to be specified. When you're calling a method on the current receiver using the infix notation, use `this` explicitly. This is required to ensure unambiguous parsing.
+
+```kotlin
+class MyStringCollection {
+    infix fun add(s: String) { /*...*/ }
+
+    fun build() {
+        this add "abc"   // Correct
+        add("abc")       // Correct
+        //add "abc"        // Incorrect: the receiver must be specified
+    }
+}
+```
 
 ## Lambdas
 
