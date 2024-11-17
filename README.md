@@ -45,6 +45,13 @@
 
 - [Infix notation](#infix-notation)
 
+- [Function scope](#function-scope):
+  - [Local functions](#local-functions)
+  - [Member functions](#member-functions)
+
+- [Generic functions](#generic-functions)
+- [Tail recursive functions](#tail-recursive-functions)
+
 - [Lambdas](#lambdas):
   - [Higher-order functions and lambdas](#higher-order-functions-and-lambdas)
   
@@ -90,7 +97,7 @@
   - [Compile-time constants](#compile-time-constants)
   - [Late-initialized properties and variables](#late-initialized-properties-and-variables)
 - [Access properties](#access-properties)
-- [Member functions](#member-functions)
+- [Member functions](#member-functions-1)
 - [Data classes](#data-classes):
   - [Properties declared in the class body](#properties-declared-in-the-class-body)
   - [Copying](#copying)
@@ -223,7 +230,7 @@
 - [Type projections](#type-projections):
   - [Use-site variance: type projections](#use-site-variance-type-projections)
   - [Star-projections](#star-projections)
-- [Generic functions](#generic-functions)
+- [Generic functions](#generic-functions-1)
 - [Generic constraints](#generic-constrains):
   - [Upper bounds](#upper-bounds)
 - [Definitely non-nullable types](#definitely-non-nullable-types)
@@ -917,6 +924,97 @@ class MyStringCollection {
     }
 }
 ```
+
+## Function scope
+
+Kotlin functions can be declared at the top level in a file, meaning you do not need to create a class to hold a function, which you are required to do in languages such as Java, C#, and Scala (top level definition is available since Scala 3). In addition to top level functions, Kotlin functions can also be declared locally as member functions and extension functions.
+
+#### Local functions
+
+Kotlin supports local functions, which are functions inside other functions:
+
+```kotlin
+fun dfs(graph: Graph) {
+    fun dfs(current: Vertex, visited: MutableSet<Vertex>) {
+        if (!visited.add(current)) return
+        for (v in current.neighbors)
+            dfs(v, visited)
+    }
+
+    dfs(graph.vertices[0], HashSet())
+}
+```
+
+A local function can access local variables of outer functions (the closure). In the case above, visited can be a local variable:
+
+```kotlin
+fun dfs(graph: Graph) {
+    val visited = HashSet<Vertex>()
+    fun dfs(current: Vertex) {
+        if (!visited.add(current)) return
+        for (v in current.neighbors)
+            dfs(v)
+    }
+
+    dfs(graph.vertices[0])
+}
+```
+
+#### Member functions
+
+
+A member function is a function that is defined inside a class or object:
+
+```kotlin
+class Sample {
+    fun foo() { print("Foo") }
+}
+```
+Member functions are called with dot notation:
+
+```kotlin
+Sample().foo() // creates instance of class Sample and calls foo
+```
+
+## Generic functions
+
+Functions can have generic parameters, which are specified using angle brackets before the function name:
+
+```kotlin
+fun <T> singletonList(item: T): List<T> { /*...*/ }
+```
+For more information on generic functions, see [Generics](#generics-in-out-where)
+
+
+## Tail recursive functions
+
+Kotlin supports a style of functional programming known as tail recursion. For some algorithms that would normally use loops, you can use a recursive function instead without the risk of stack overflow. When a function is marked with the `tailrec` modifier and meets the required formal conditions, the compiler optimizes out the recursion, leaving behind a fast and efficient loop based version instead:
+
+```kotlin
+val eps = 1E-10 // "good enough", could be 10^-15
+
+tailrec fun findFixPoint(x: Double = 1.0): Double =
+    if (Math.abs(x - Math.cos(x)) < eps) x else findFixPoint(Math.cos(x))
+```
+
+This code calculates the `fixpoint` of cosine, which is a mathematical constant. It simply calls `Math.cos` repeatedly starting at `1.0` until the result no longer changes, yielding a result of `0.7390851332151611` for the specified `eps` precision. The resulting code is equivalent to this more traditional style:
+
+
+```kotlin
+val eps = 1E-10 // "good enough", could be 10^-15
+
+private fun findFixPoint(): Double {
+    var x = 1.0
+    while (true) {
+        val y = Math.cos(x)
+        if (Math.abs(x - y) < eps) return x
+        x = Math.cos(x)
+    }
+}
+```
+
+To be eligible for the `tailrec` modifier, a function must call itself as the last operation it performs. You cannot use tail recursion when there is more code after the recursive call, within `try`/`catch`/`finally` blocks, or on open functions. Currently, tail recursion is supported by Kotlin for the JVM and Kotlin/Native.
+
 
 ## Lambdas
 
