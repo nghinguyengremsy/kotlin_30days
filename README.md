@@ -177,6 +177,9 @@
 - [Nullable types](#nullable-types)
 - [Check for null values](#check-for-null-values)
 - [Use safe calls](#use-safe-calls)
+- [Use Elvis operator](#use-elvis-operator)
+- [Not-null assertion operator](#not-null-assertion-operator)
+
 
 [Extensions](#extensions):
 - [Extension functions](#extension-functions-)
@@ -4662,7 +4665,35 @@ fun main() {
     println(nullString?.length ?: 0) //0
 }
 ```
+## Not-null assertion operator
 
+The not-null assertion operator `!!` converts any value to a non-nullable type.
+
+When you apply the `!!` operator to a variable whose value is not null, it's safely handled as a non-nullable type, and the code executes normally. However, if the value is `null`, the `!!` operator forces it to be treated as non-nullable, which results in an NPE.
+
+When `b` is not null and the `!!` operator makes it return its non-null value (which is a `String` in this example), it accesses `length` correctly:
+
+```kotlin
+// Assigns a nullable string to a variable  
+val b: String? = "Kotlin"
+// Treats b as non-null and accesses its length
+val l = b!!.length
+println(l)
+// 6
+```
+
+When `b` is null and the `!!` operator makes it return its non-null value, and an NPE occurs:
+
+```kotlin
+// Assigns null to a nullable variable  
+val b: String? = null
+// Treats b as non-null and tries to access its length
+val l = b!!.length
+println(l) 
+// Exception in thread "main" java.lang.NullPointerException
+```
+
+The `!!` operator is particularly useful when you are confident that a value is not `null` and there’s no chance of getting an NPE, but the compiler cannot guarantee this due to certain rules. In such cases, you can use the `!!` operator to explicitly tell the compiler that the value is not `null`.
 
 # Extensions
 
