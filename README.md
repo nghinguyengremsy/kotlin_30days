@@ -255,7 +255,15 @@
 - [Callbacks](#callbacks)
 - [Futures, promises, and others](#futures-promises-and-others)
 - [Reactive extensions](#reactive-extensions)
-- [Coroutines](#coroutines)
+- [Coroutines](#coroutines):
+  - [Your first coroutine](#your-first-coroutine)
+  - [Extract function refactoring](#extract-function-refactoring)
+  - [Scope builder](#scope-builder)
+  - [Scope builder and concurrency](#scope-builder-and-concurrency)
+  - [An explicit job](#an-explicit-job)
+  - [Coroutines are light-weight](#coroutines-are-light-weight)
+  - [Cancellation and timeouts](#cancellation-and-timeouts)
+  - [Composing suspending functions](#composing-suspending-functions)
 
 [Idioms](#idioms):
 
@@ -6646,6 +6654,682 @@ Coroutines are not a new concept, let alone invented by Kotlin. They've been aro
 - [kotlinx.coroutines examples and sources](https://github.com/Kotlin/coroutines-examples/tree/master/examples)
 - [KotlinConf app](https://github.com/JetBrains/kotlinconf-app)
 
+#### Your first coroutine
+
+Coroutines can be thought of as light-weight threads, but there is a number of important differences that make their real-life usage very different from threads.
+
+```kotlin
+fun main() = runBlocking { // this: CoroutineScope
+    launch { // launch a new coroutine and continue
+        delay(1000L) // non-blocking delay for 1 second (default time unit is ms)
+        println("World!") // print after delay
+    }
+    println("Hello") // main coroutine continues while a previous one is delayed
+}
+
+/// Hello
+/// World
+```
+
+`launch` is **coroutine builder**. It launches a new coroutine concurrently with the rest of the code, which continues to work independently. That's why `Hello` has been printed first.
+
+`delay` is special **suspending function**. It **suspends** the coroutine for a specific time. Suspending a coroutine does not **block** the underlying thread, but allow other coroutines to run and use the underlying thread for their code.
+
+`runBlocking` is also a coroutine builder that bridges the non-coroutine world of a regular `fun main()` and the code with coroutines inside of `runBlocking {...}` curly braces. This is highlighted in an IDE by `this: CoroutineScope` hint right after the `runBlocking` opening curly brace.
+
+If you remove or forget `runBlocking` in this code, you'll get an error on the `launch` call, since `launch` is declared only on the `CoroutineScope`:
+
+```
+Unresolved reference: launch
+```
+
+The name of `runBlocking` means that the thread that runs it (in this case — the main thread) gets blocked for the duration of the call, until all the coroutines inside `runBlocking { ... }` complete their execution. You will often see `runBlocking` used like that at the very top-level of the application and quite rarely inside the real code, as threads are expensive resources and blocking them is inefficient and is often not desired.
+
+
+**Structured concurrency**
+
+Coroutines follow a principle of **structured concurrency** which means that new coroutines can only be launched in a specific `CoroutineScope` which delimits the lifetime of the coroutine. The above example shows that `runBlocking` establishes the corresponding scope and that is why the previous example waits until `World!` is printed after a second's delay and only then exits.
+
+In a real application, you will be launching a lot of coroutines. Structured concurrency ensures that they are not lost and do not leak. An outer scope cannot complete until all its children coroutines complete. Structured concurrency also ensures that any errors in the code are properly reported and are never lost.
+
+#### Extract function refactoring
+
+Let's extract the block of code inside `launch { ... }` into a separate function. When you perform "Extract function" refactoring on this code, you get a new function with the `suspend` modifier. This is your first **suspending function**. Suspending functions can be used inside coroutines just like regular functions, but their additional feature is that they can, in turn, use other suspending functions (like delay in this example) to `suspend` execution of a coroutine.
+
+```kotlin
+fun main() = runBlocking { // this: CoroutineScope
+    launch { doWorld() }
+    println("Hello")
+}
+
+// this is your first suspending function
+suspend fun doWorld() {
+    delay(1000L)
+    println("World!")
+}
+```
+
+#### Scope builder
+
+In addition to the coroutine scope provided by different builders, it is possible to declare your own scope using the coroutineScope builder. It creates a coroutine scope and does not complete until all launched children complete.
+
+runBlocking and coroutineScope builders may look similar because they both wait for their body and all its children to complete. The main difference is that the runBlocking method **blocks** the current thread for waiting, while coroutineScope just suspends, releasing the underlying thread for other usages. Because of that difference, runBlocking is a regular function and coroutineScope is a suspending function.
+
+You can use `coroutineScope` from any suspending function. For example, you can move the concurrent printing of `Hello` and `World` into a `suspend fun doWorld()` function:
+
+```kotlin
+fun main() = runBlocking {
+    doWorld()
+}
+
+suspend fun doWorld() = coroutineScope {  // this: CoroutineScope
+    launch {
+        delay(1000L)
+        println("World!")
+    }
+    println("Hello")
+}
+```
+
+
+#### Scope builder and concurrency
+
+A coroutineScope builder can be used inside any suspending function to perform multiple concurrent operations. Let's launch two concurrent coroutines inside a `doWorld` suspending function:
+
+````kotlin
+// Sequentially executes doWorld followed by "Done"
+fun main() = runBlocking {
+    doWorld()
+    println("Done")
+}
+
+// Concurrently executes both sections
+suspend fun doWorld() = coroutineScope { // this: CoroutineScope
+    launch {
+        delay(2000L)
+        println("World 2")
+    }
+    launch {
+        delay(1000L)
+        println("World 1")
+    }
+    println("Hello")
+}
+
+
+/// Hello
+/// World 1
+/// World 2
+/// Done
+````
+
+
+Both pieces of code inside `launch { ... }` blocks execute concurrently, with `World 1` printed first, after a second from start, and `World 2` printed next, after two seconds from start. A `coroutineScope` in `doWorld` completes only after both are complete, so `doWorld` returns and allows `Done` string to be printed only after that:
+
+#### An explicit job
+
+A launch coroutine builder returns a `Job` object that is a handle to the launched coroutine and can be used to explicitly wait for its completion. For example, you can wait for completion of the child coroutine and then print "Done" string:
+
+```kotlin
+val job = launch {
+    // launch a new coroutine and keep a reference to its Job
+    delay(1000L)
+    println("World!")
+}
+
+println("Hello")
+job.join() // wait until child coroutine completes
+println("Done")
+```
+
+#### Coroutines are light-weight
+
+Coroutines are less resource-intensive than JVM threads. Code that exhausts the JVM's available memory when using threads can be expressed using coroutines without hitting resource limits. For example, the following code launches 50,000 distinct coroutines that each waits 5 seconds and then prints a period ('.') while consuming very little memory:
+
+```kotlin
+import kotlinx.coroutines.*
+
+fun main() = runBlocking {
+    repeat(50_000) { // launch a lot of coroutines
+        launch {
+            delay(5000L)
+            print(".")
+        }
+    }
+}
+```
+
+If you write the same program using threads (remove `runBlocking`, replace `launch` with `thread`, and replace `delay` with `Thread.sleep`), it will consume a lot of memory. Depending on your operating system, JDK version, and its settings, it will either throw an out-of-memory error or start threads slowly so that there are never too many concurrently running threads.
+
+#### Cancellation and timeouts
+
+###### **Cancelling coroutine execution**
+
+In a long-running application you might need fine-grained control on your background coroutines. For example, a user might have closed the page that launched a coroutine and now its result is no longer needed and its operation can be cancelled. The launch function returns a Job that can be used to cancel the running coroutine:
+
+````kotlin
+val job = launch {
+    repeat(1000) { i ->
+        println("job: I'm sleeping $i ...")
+        delay(500L)
+    }
+}
+delay(1300L) // delay a bit
+println("main: I'm tired of waiting!")
+job.cancel() // cancels the job
+job.join() // waits for job's completion 
+println("main: Now I can quit.")
+````
+
+Output: 
+
+```
+job: I'm sleeping 0 ...
+job: I'm sleeping 1 ...
+job: I'm sleeping 2 ...
+main: I'm tired of waiting!
+main: Now I can quit.
+```
+
+As soon as main invokes `job.cancel`, we don't see any output from the other coroutine because it was cancelled. There is also a Job extension function cancelAndJoin that combines cancel and join invocations.
+
+###### **Cancellation is cooperative**
+
+Coroutine cancellation is **cooperative**. A coroutine code has to cooperate to be cancellable. All the suspending functions in `kotlinx.coroutines` are **cancellable**. They check for cancellation of coroutine and throw `CancellationException` when cancelled. However, if a coroutine is working in a computation and does not check for cancellation, then it cannot be cancelled, like the following example shows:
+
+```kotlin
+val startTime = System.currentTimeMillis()
+val job = launch(Dispatchers.Default) {
+    var nextPrintTime = startTime
+    var i = 0
+    while (i < 5) { // computation loop, just wastes CPU
+        // print a message twice a second
+        if (System.currentTimeMillis() >= nextPrintTime) {
+            println("job: I'm sleeping ${i++} ...")
+            nextPrintTime += 500L
+        }
+    }
+}
+delay(1300L) // delay a bit
+println("main: I'm tired of waiting!")
+job.cancelAndJoin() // cancels the job and waits for its completion
+println("main: Now I can quit.")
+```
+
+Output:
+
+```
+job: I'm sleeping 0 ...
+job: I'm sleeping 1 ...
+job: I'm sleeping 2 ...
+main: I'm tired of waiting!
+job: I'm sleeping 3 ...
+job: I'm sleeping 4 ...
+main: Now I can quit.
+```
+
+Run it to see that it continues to print "I'm sleeping" even after cancellation until the job completes by itself after five iterations.
+
+The same problem can be observed by catching a CancellationException and not rethrowing it:
+
+```kotlin
+val job = launch(Dispatchers.Default) {
+    repeat(5) { i ->
+        try {
+            // print a message twice a second
+            println("job: I'm sleeping $i ...")
+            delay(500)
+        } catch (e: Exception) {
+            // log the exception
+            println(e)
+        }
+    }
+}
+delay(1300L) // delay a bit
+println("main: I'm tired of waiting!")
+job.cancelAndJoin() // cancels the job and waits for its completion
+println("main: Now I can quit.")
+```
+
+```
+job: I'm sleeping 0 ...
+job: I'm sleeping 1 ...
+job: I'm sleeping 2 ...
+main: I'm tired of waiting!
+kotlinx.coroutines.JobCancellationException: StandaloneCoroutine was cancelled; job="coroutine#2":StandaloneCoroutine{Cancelling}@1fea1ce6
+job: I'm sleeping 3 ...
+kotlinx.coroutines.JobCancellationException: StandaloneCoroutine was cancelled; job="coroutine#2":StandaloneCoroutine{Cancelling}@1fea1ce6
+job: I'm sleeping 4 ...
+kotlinx.coroutines.JobCancellationException: StandaloneCoroutine was cancelled; job="coroutine#2":StandaloneCoroutine{Cancelling}@1fea1ce6
+main: Now I can quit.
+```
+
+While catching Exception is an anti-pattern, this issue may surface in more subtle ways, like when using the `runCatching` function, which does not rethrow CancellationException.
+
+
+###### **Making computation code cancellable**
+
+There are two approaches to making computation code cancellable. The first one is to periodically invoke a suspending function that checks for cancellation. There is a yield function that is a good choice for that purpose. The other one is to explicitly check the cancellation status. Let us try the latter approach.
+
+Replace `while (i < 5)` in the previous example with `while (isActive)` and rerun it.
+
+```kotlin
+val startTime = System.currentTimeMillis()
+val job = launch(Dispatchers.Default) {
+    var nextPrintTime = startTime
+    var i = 0
+    while (isActive) { // cancellable computation loop
+        // print a message twice a second
+        if (System.currentTimeMillis() >= nextPrintTime) {
+            println("job: I'm sleeping ${i++} ...")
+            nextPrintTime += 500L
+        }
+    }
+}
+delay(1300L) // delay a bit
+println("main: I'm tired of waiting!")
+job.cancelAndJoin() // cancels the job and waits for its completion
+println("main: Now I can quit.")
+```
+
+Output:
+
+```
+job: I'm sleeping 0 ...
+job: I'm sleeping 1 ...
+job: I'm sleeping 2 ...
+main: I'm tired of waiting!
+main: Now I can quit.
+```
+
+As you can see, now this loop is cancelled. isActive is an extension property available inside the coroutine via the CoroutineScope object.
+
+###### **Closing resources with finally**
+
+Cancellable suspending functions throw `CancellationException` on cancellation, which can be handled in the usual way. For example, the `try {...} finally {...}` expression and Kotlin's use function execute their finalization actions normally when a coroutine is cancelled:
+
+```kotlin
+val job = launch {
+    try {
+        repeat(1000) { i ->
+            println("job: I'm sleeping $i ...")
+            delay(500L)
+        }
+    } finally {
+        println("job: I'm running finally")
+    }
+}
+delay(1300L) // delay a bit
+println("main: I'm tired of waiting!")
+job.cancelAndJoin() // cancels the job and waits for its completion
+println("main: Now I can quit.")
+```
+
+Output: 
+
+```
+job: I'm sleeping 0 ...
+job: I'm sleeping 1 ...
+job: I'm sleeping 2 ...
+main: I'm tired of waiting!
+job: I'm running finally
+main: Now I can quit.
+```
+
+###### **Run non-cancellable block**
+
+Any attempt to use a suspending function in the `finally` block of the previous example causes CancellationException, because the coroutine running this code is cancelled.
+Usually, this is not a problem, since all well-behaving closing operations (closing a file, cancelling a job, or closing any kind of a communication channel) are usually non-blocking and do not involve any suspending functions. However, in the rare case when you need to suspend in a cancelled coroutine you can wrap the corresponding code in `withContext(NonCancellable) {...}` using withContext function and NonCancellable context as the following example shows:
+
+```kotlin
+val job = launch {
+    try {
+        repeat(1000) { i ->
+            println("job: I'm sleeping $i ...")
+            delay(500L)
+        }
+    } finally {
+        withContext(NonCancellable) {
+            println("job: I'm running finally")
+            delay(1000L)
+            println("job: And I've just delayed for 1 sec because I'm non-cancellable")
+        }
+    }
+}
+delay(1300L) // delay a bit
+println("main: I'm tired of waiting!")
+job.cancelAndJoin() // cancels the job and waits for its completion
+println("main: Now I can quit.")
+```
+
+Output: 
+
+```
+job: I'm sleeping 0 ...
+job: I'm sleeping 1 ...
+job: I'm sleeping 2 ...
+main: I'm tired of waiting!
+job: I'm running finally
+job: And I've just delayed for 1 sec because I'm non-cancellable
+main: Now I can quit.
+```
+
+###### **Timeout**
+
+The most obvious practical reason to cancel execution of a coroutine is because its execution time has exceeded some timeout. While you can manually track the reference to the corresponding Job and launch a separate coroutine to cancel the tracked one after delay, there is a ready to use `withTimeout` function that does it. Look at the following example:
+
+```kotlin
+withTimeout(1300L) {
+    repeat(1000) { i ->
+        println("I'm sleeping $i ...")
+        delay(500L)
+    }
+}
+```
+
+Output:
+
+``` 
+I'm sleeping 0 ...
+I'm sleeping 1 ...
+I'm sleeping 2 ...
+Exception in thread "main" kotlinx.coroutines.TimeoutCancellationException: Timed out waiting for 1300 ms
+ at _COROUTINE._BOUNDARY._ (CoroutineDebugging.kt:46) 
+ at FileKt$main$1$1.invokeSuspend (File.kt:-1) 
+ at FileKt$main$1.invokeSuspend (File.kt:-1) 
+Caused by: kotlinx.coroutines.TimeoutCancellationException: Timed out waiting for 1300 ms
+at kotlinx.coroutines.TimeoutKt .TimeoutCancellationException(Timeout.kt:191)
+at kotlinx.coroutines.TimeoutCoroutine .run(Timeout.kt:159)
+at kotlinx.coroutines.EventLoopImplBase$DelayedRunnableTask .run(EventLoop.common.kt:501)
+```
+
+The `TimeoutCancellationException` that is thrown by `withTimeout` is a subclass of CancellationException. We have not seen its stack trace printed on the console before. That is because inside a cancelled coroutine CancellationException is considered to be a normal reason for coroutine completion. However, in this example we have used `withTimeout` right inside the `main` function.
+
+Since cancellation is just an exception, all resources are closed in the usual way. You can wrap the code with timeout in a `try {...} catch (e: TimeoutCancellationException) {...}` block if you need to do some additional action specifically on any kind of timeout or use the `withTimeoutOrNull` function that is similar to `withTimeout` but returns `null` on timeout instead of throwing an exception:
+
+```kotlin
+val result = withTimeoutOrNull(1300L) {
+    repeat(1000) { i ->
+        println("I'm sleeping $i ...")
+        delay(500L)
+    }
+    "Done" // will get cancelled before it produces this result
+}
+println("Result is $result")
+```
+
+Output:
+```
+I'm sleeping 0 ...
+I'm sleeping 1 ...
+I'm sleeping 2 ...
+Result is null
+```
+
+###### **Asynchronous timeout and resources**
+
+The timeout event in withTimeout is asynchronous with respect to the code running in its block and may happen at any time, even right before the return from inside the timeout block. Keep this in mind if you open or acquire some resource inside the block that needs closing or release outside the block.
+
+For example, here we imitate a closeable resource with the `Resource` class that simply keeps track of how many times it was created by incrementing the `acquired` counter and decrementing the `counter` in its close function.  Now let us create a lot of coroutines, each of which creates a `Resource` at the end of the `withTimeout` block and releases the resource outside the block. We add a small delay so that it is more likely that the timeout occurs right when the `withTimeout` block is already finished, which will cause a resource leak.
+
+```kotlin
+var acquired = 0
+
+class Resource {
+    init { acquired++ } // Acquire the resource
+    fun close() { acquired-- } // Release the resource
+}
+
+fun main() {
+    runBlocking {
+        repeat(10_000) { // Launch 10K coroutines
+            launch { 
+                val resource = withTimeout(60) { // Timeout of 60 ms
+                    delay(50) // Delay for 50 ms
+                    Resource() // Acquire a resource and return it from withTimeout block     
+                }
+                resource.close() // Release the resource
+            }
+        }
+    }
+    // Outside of runBlocking all coroutines have completed
+    println(acquired) // Print the number of resources still acquired
+}
+```
+
+If you run the above code, you'll see that it does not always print zero, though it may depend on the timings of your machine. You may need to tweak the timeout in this example to actually see non-zero values.
+
+>✨ Note that incrementing and decrementing `acquired` counter here from 10K coroutines is completely thread-safe, since it always happens from the same thread, the one used by `runBlocking`. More on that will be explained in the chapter on coroutine context.
+
+```kotlin
+runBlocking {
+    repeat(10_000) { // Launch 10K coroutines
+        launch { 
+            var resource: Resource? = null // Not acquired yet
+            try {
+                withTimeout(60) { // Timeout of 60 ms
+                    delay(50) // Delay for 50 ms
+                    resource = Resource() // Store a resource to the variable if acquired      
+                }
+                // We can do something else with the resource here
+            } finally {  
+                resource?.close() // Release the resource if it was acquired
+            }
+        }
+    }
+}
+// Outside of runBlocking all coroutines have completed
+println(acquired) // Print the number of resources still acquired
+```
+
+#### Composing suspending functions
+
+###### **Sequential by default**
+
+
+Assume that we have two suspending functions defined elsewhere that do something useful like some kind of remote service call or computation. We just pretend they are useful, but actually each one just delays for a second for the purpose of this example:
+
+```kotlin
+suspend fun doSomethingUsefulOne(): Int {
+    delay(1000L) // pretend we are doing something useful here
+    return 13
+}
+
+suspend fun doSomethingUsefulTwo(): Int {
+    delay(1000L) // pretend we are doing something useful here, too
+    return 29
+}
+```
+
+What do we do if we need them to be invoked **sequentially** — first `doSomethingUsefulOne` and then `doSomethingUsefulTwo`, and compute the sum of their results? In practice, we do this if we use the result of the first function to make a decision on whether we need to invoke the second one or to decide on how to invoke it.
+
+We use a normal sequential invocation, because the code in the coroutine, just like in the regular code, is **sequential** by default. The following example demonstrates it by measuring the total time it takes to execute both suspending functions:
+
+```kotlin
+val time = measureTimeMillis {
+    val one = doSomethingUsefulOne()
+    val two = doSomethingUsefulTwo()
+    println("The answer is ${one + two}")
+}
+println("Completed in $time ms")
+```
+
+Output:
+
+```
+The answer is 42
+Completed in 2016 ms
+```
+
+###### **Concurrent using async**
+
+What if there are no dependencies between invocations of `doSomethingUsefulOne` and `doSomethingUsefulTwo` and we want to get the answer faster, by doing both **concurrently**? This is where async comes to help.
+
+Conceptually, `async` is just like `launch`. It starts a separate coroutine which is a light-weight thread that works concurrently with all the other coroutines. The difference is that `launch` returns a Job and does not carry any resulting value, while `async` returns a `Deferred` — a light-weight non-blocking future that represents a promise to provide a result later. You can use `.await()` on a deferred value to get its eventual result, but `Deferred` is also a `Job`, so you can cancel it if needed.
+
+```kotlin
+val time = measureTimeMillis {
+    val one = async { doSomethingUsefulOne() }
+    val two = async { doSomethingUsefulTwo() }
+    println("The answer is ${one.await() + two.await()}")
+}
+println("Completed in $time ms")
+```
+
+Output:
+
+```
+The answer is 42
+Completed in 1026 ms
+```
+
+This is twice as fast, because the two coroutines execute concurrently. Note that concurrency with coroutines is always explicit.
+
+###### **Lazily started async** 
+
+Optionally, `async` can be made lazy by setting its start parameter to CoroutineStart.LAZY. In this mode it only starts the coroutine when its result is required by `await`, or if its `Job`'s start function is invoked. Run the following example:
+
+```kotlin
+val time = measureTimeMillis {
+  val one = async(start = CoroutineStart.LAZY) { doSomethingUsefulOne() }
+  val two = async(start = CoroutineStart.LAZY) { doSomethingUsefulTwo() }
+  // some computation
+  one.start() // start the first one
+  two.start() // start the second one
+  println("The answer is ${one.await() + two.await()}")
+}
+println("Completed in $time ms")
+```
+Output: 
+```
+The answer is 42
+Completed in 1022 ms
+```
+
+So, here the two coroutines are defined but not executed as in the previous example, but the control is given to the programmer on when exactly to start the execution by calling start. We first start `one`, then start `two`, and then await for the individual coroutines to finish.
+
+Note that if we just call `await` in println without first calling `start` on individual coroutines, this will lead to sequential behavior, since `await` starts the coroutine execution and waits for its finish, which is not the intended use-case for laziness. The use-case for `async(start = CoroutineStart.LAZY)` is a replacement for the standard lazy function in cases when computation of the value involves suspending functions.
+
+###### **Async-style functions**
+
+>✨ This programming style with async functions is provided here only for illustration, because it is a popular style in other programming languages. Using this style with Kotlin coroutines is **strongly discouraged** for the reasons explained below.
+
+We can define async-style functions that invoke `doSomethingUsefulOne` and `doSomethingUsefulTwo` **asynchronously** using the async coroutine builder using a GlobalScope reference to opt-out of the structured concurrency.
+We name such functions with the "...Async" suffix to highlight the fact that they only start asynchronous computation and one needs to use the resulting deferred value to get the result.
+
+>✨ GlobalScope is a delicate API that can backfire in non-trivial ways, one of which will be explained below, so you must explicitly opt-in into using `GlobalScope` with `@OptIn(DelicateCoroutinesApi::class)`.
+
+```kotlin
+// The result type of somethingUsefulOneAsync is Deferred<Int>
+@OptIn(DelicateCoroutinesApi::class)
+fun somethingUsefulOneAsync() = GlobalScope.async {
+    doSomethingUsefulOne()
+}
+
+// The result type of somethingUsefulTwoAsync is Deferred<Int>
+@OptIn(DelicateCoroutinesApi::class)
+fun somethingUsefulTwoAsync() = GlobalScope.async {
+    doSomethingUsefulTwo()
+}
+```
+
+Note that these `xxxAsync` functions are **not suspending** functions. They can be used from anywhere. However, their use always implies asynchronous (here meaning **concurrent**) execution of their action with the invoking code.
+
+The following example shows their use outside of coroutine:
+
+```kotlin
+
+// note that we don't have `runBlocking` to the right of `main` in this example
+fun main() {
+  val time = measureTimeMillis {
+    // we can initiate async actions outside of a coroutine
+    val one = somethingUsefulOneAsync()
+    val two = somethingUsefulTwoAsync()
+    // but waiting for a result must involve either suspending or blocking.
+    // here we use `runBlocking { ... }` to block the main thread while waiting for the result
+    runBlocking {
+      println("The answer is ${one.await() + two.await()}")
+    }
+  }
+  println("Completed in $time ms")
+}
+
+```
+
+Output: 
+
+```
+The answer is 42
+Completed in 1125 ms
+```
+
+Consider what happens if between the val `one = somethingUsefulOneAsync()` line and `one.await()` expression there is some logic error in the code, and the program throws an exception, and the operation that was being performed by the program aborts. Normally, a global error-handler could catch this exception, log and report the error for developers, but the program could otherwise continue doing other operations. However, here we have `somethingUsefulOneAsync` still running in the background, even though the operation that initiated it was aborted. This problem does not happen with structured concurrency, as shown in the section below.
+
+
+###### **Structured concurrency with async**
+
+Let us take the Concurrent using async example and extract a function that concurrently performs `doSomethingUsefulOne` and `doSomethingUsefulTwo` and returns the sum of their results. Because the async coroutine builder is defined as an extension on CoroutineScope, we need to have it in the scope and that is what the coroutineScope function provides:
+
+```kotlin
+suspend fun concurrentSum(): Int = coroutineScope {
+    val one = async { doSomethingUsefulOne() }
+    val two = async { doSomethingUsefulTwo() }
+    one.await() + two.await()
+}
+```
+
+This way, if something goes wrong inside the code of the `concurrentSum` function, and it throws an exception, all the coroutines that were launched in its scope will be cancelled.
+
+```kotlin
+val time = measureTimeMillis {
+    println("The answer is ${concurrentSum()}")
+}
+println("Completed in $time ms")
+```
+Output:
+
+```
+The answer is 42
+Completed in 1026 ms
+```
+
+Cancellation is always propagated through coroutine's hierarchy:
+
+```kotlin
+import kotlinx.coroutines.*
+
+fun main() = runBlocking<Unit> {
+    try {
+        failedConcurrentSum()
+    } catch(e: ArithmeticException) {
+        println("Computation failed with ArithmeticException")
+    }
+}
+
+suspend fun failedConcurrentSum(): Int = coroutineScope {
+    val one = async<Int> { 
+        try {
+            delay(Long.MAX_VALUE) // Emulates very long computation
+            42
+        } finally {
+            println("First child was cancelled")
+        }
+    }
+    val two = async<Int> { 
+        println("Second child throws an exception")
+        throw ArithmeticException()
+    }
+    one.await() + two.await()
+}
+```
+
+Note how both the first `async` and the awaiting parent are cancelled on failure of one of the children (namely, `two`):
+
+```
+Second child throws an exception
+First child was cancelled
+Computation failed with ArithmeticException
+```
 # Idioms
 
 A collection of random and frequently used idioms in Kotlin.
