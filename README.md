@@ -270,6 +270,8 @@
   - [Coroutine exceptions handling](#coroutine-exceptions-handling)
   - [Shared mutable state and concurrency](#shared-mutable-state-and-concurrency)
   - [Select expression](#select-expression)
+  - [Debug coroutines using IntelliJ IDEA – tutorial](#debug-coroutines-using-intellij-idea--tutorial)
+  - [Debug Kotlin Flow using IntelliJ IDEA – tutorial](#debug-kotlin-flow-using-intellij-idea--tutorial)
 
 [Idioms](#idioms):
 
@@ -9982,6 +9984,14 @@ END
 Channel was closed
 ```
 
+#### Debug coroutines using IntelliJ IDEA – tutorial
+
+Guide: [Debug coroutines using IntelliJ IDEA – tutorial](https://kotlinlang.org/docs/debug-coroutines-with-idea.html)
+
+#### Debug Kotlin Flow using IntelliJ IDEA – tutorial
+
+Guide: [Debug Kotlin Flow using IntelliJ IDEA – tutorial](https://kotlinlang.org/docs/debug-flow-with-idea.html)
+
 # Idioms
 
 A collection of random and frequently used idioms in Kotlin.
@@ -10866,3 +10876,6 @@ You can benefit from:
 - **Interoperability wih Java:** You can use Kotlin along with the Java programming language in your applications without needing to migrate all your code to Kotlin.
 - **Easy leaning:** Kotlin is very easy to learn, especially for Java developers.
 - **Big community:** Kotlin has great support and many contributions from the community, which is growing all over the world. Over 95% of top thousand Android apps use Kotlin.
+
+[Basic guide](https://developer.android.com/courses/android-basics-compose/course)
+[Advanced guide](https://developer.android.com/kotlin/coroutines)
